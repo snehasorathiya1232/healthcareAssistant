@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// The User table — stores account info
+model User {
+  id        String   @id @default(cuid()) // unique ID like "clx7abc123"
+  name      String
+  email     String   @unique // no duplicate emails
+  password  String // will be hashed, never plain text
+  createdAt DateTime @default(now())
+
+  // One user can have one profile (optional — created after signup)
+  profile Profile?
+}
+
+// The Profile table — stores health/personal info
+model Profile {
+  id               String  @id @default(cuid())
+  userId           String  @unique // links back to User
+  phone            String? // ? means optional
+  location         String?
+  dateOfBirth      String?
+  gender           String?
+  bloodGroup       String?
+  emergencyContact String?
+
+  // Health notification preferences (stored as true/false)
+  emailAlerts         Boolean @default(true)
+  pushNotifications   Boolean @default(true)
+  medicationReminders Boolean @default(true)
+  healthTips          Boolean @default(true)
+  weeklyReport        Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
