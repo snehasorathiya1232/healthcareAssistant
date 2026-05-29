@@ -13,6 +13,7 @@ import { PersonalInfoStep } from "@/components/predict/personal-info-step"
 import { VitalsStep } from "@/components/predict/vitals-step"
 import { MedicalHistoryStep } from "@/components/predict/medical-history-step"
 import { LifestyleStep } from "@/components/predict/lifestyle-step"
+import { supabase } from "@/lib/supabase"
 
 const steps = [
   { id: 1, title: "Personal Info", icon: User },
@@ -96,33 +97,55 @@ export default function PredictPage() {
     }
   }
 
-  const handleSubmit = async () => {
-    try {
-          setIsSubmitting(true)
+    const handleSubmit = async () => {
+      try {
+        setIsSubmitting(true)
 
-    const res = await fetch("/api/health-assessment", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
-    })
+        const { data: userData } = await supabase.auth.getUser()
 
-      const data = await res.json()
+        if (!userData.user) {
+          alert("Please login first to save your assessment.")
+          router.push("/login")
+          return
+        }
 
-      if (!res.ok) {
-        alert(data.error || "Assessment failed")
+        const res = await fetch("/api/health-assessment", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+         },
+          body: JSON.stringify(formData),
+        })
+
+        const data = await res.json()
+
+        if (!res.ok) {
+          alert(data.error || "Assessment failed")
         return
       }
 
-      localStorage.setItem("healthAssessmentResult", JSON.stringify(data))
-      router.push("/results")
-    } catch (error) {
-      alert("Something went wrong. Please try again.")
-    } finally {
-      setIsSubmitting(false)
-   }
-  }
+        const { error } = await supabase.from("health_assessments").insert({
+          user_id: userData.user.id,
+          overall_score: data.overallScore,
+          summary: data.summary,
+          input_data: formData,
+          result_data: data,
+        })
+
+        if (error) {
+          console.error("Supabase save error:", error)
+          alert("Result calculated, but saving history failed.")
+        }
+
+        localStorage.setItem("healthAssessmentResult", JSON.stringify(data))
+        router.push("/results")
+      } catch (error) {
+        console.error(error)
+        alert("Something went wrong. Please try again.")
+      } finally {
+        setIsSubmitting(false)
+      }
+    }
 
   const renderStep = () => {
     switch (currentStep) {
