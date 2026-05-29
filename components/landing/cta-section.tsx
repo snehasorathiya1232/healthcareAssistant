@@ -44,7 +44,7 @@ export function CTASection() {
               </Link>
             </Button>
             <Button size="lg" variant="outline" className="h-12 px-8 text-base border-primary-foreground/20 text-black hover:bg-primary-foreground/10" asChild>
-              <Link href="/login">
+              <Link href="/signup">
                 Sign In
               </Link>
             </Button>
