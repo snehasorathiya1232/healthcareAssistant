@@ -20,13 +20,13 @@ export default function SignupPage() {
     setLoading(true)
     setMessage("")
 
-    const { error } = await supabase.auth.signUp({ email, password })
+  const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    })
 
-    if (error) {
-      setMessage(error.message)
-      setLoading(false)
-      return
-    }
+    console.log("SIGNUP DATA:", data)
+    console.log("SIGNUP ERROR:", error)
 
     setMessage("Account created successfully. Please login.")
     setTimeout(() => router.push("/login"), 1000)
