@@ -95,6 +95,7 @@ export async function POST(req: Request) {
     let heartScore = 0
     let kidneyScore = 0
     let liverScore = 0
+    let breastCancerScore = 0
 
     if (age > 45) {
       diabetesScore += 15
@@ -143,6 +144,13 @@ export async function POST(req: Request) {
     }
 
     if (data.stressLevel === "high") heartScore += 15
+    if (data.gender === "female") {
+      if (age > 40) breastCancerScore += 20
+      if (data.familyCancer) breastCancerScore += 30
+      if (bmi >= 25) breastCancerScore += 10
+      if (data.alcoholConsumption === "heavy") breastCancerScore += 10
+      if (data.exerciseFrequency === "rarely") breastCancerScore += 10
+    }
 
     if (lowerSymptoms.includes("frequent urination")) diabetesScore += 15
     if (lowerSymptoms.includes("excessive thirst")) diabetesScore += 15
@@ -155,9 +163,10 @@ export async function POST(req: Request) {
     heartScore = clamp(heartScore)
     kidneyScore = clamp(kidneyScore)
     liverScore = clamp(liverScore)
+    breastCancerScore = clamp(breastCancerScore)
 
     const averageRisk =
-      (diabetesScore + heartScore + kidneyScore + liverScore) / 4
+  (diabetesScore + heartScore + kidneyScore + liverScore + breastCancerScore) / 5
 
     const overallScore = clamp(Math.round(100 - averageRisk))
 
@@ -201,6 +210,14 @@ export async function POST(req: Request) {
           description:
             "Calculated using BMI, alcohol intake, medications, and digestive symptoms.",
           factors: ["BMI", "Alcohol", "Medications", "Symptoms"],
+        },
+        {
+        disease: "Breast Cancer",
+        risk: riskLevel(breastCancerScore),
+        percentage: breastCancerScore,
+        description:
+        "Calculated using gender, age, family history, BMI, lifestyle, and related risk factors.",
+        factors: ["Age", "Family history", "BMI", "Lifestyle"],
         },
       ],
       dietRecommendations: [

@@ -18,6 +18,7 @@ const iconMap: any = {
   "Heart Disease": Heart,
   "Kidney Disease": Shield,
   "Liver Disorders": Stethoscope,
+  "Breast Cancer": Activity,
   "Emergency Health Risk": AlertTriangle,
 }
 
