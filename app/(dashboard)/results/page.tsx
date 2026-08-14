@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-
+import { Suspense, useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import {
   Heart,
   Droplets,
@@ -19,25 +20,13 @@ import {
   AlertTriangle,
   Loader2,
 } from "lucide-react"
-
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-
-import { Button } from "@/components/ui/button"
-
 import { RiskMeter } from "@/components/results/risk-meter"
 import { RecommendationCard } from "@/components/results/recommendation-card"
 import { RiskFactorChart } from "@/components/results/risk-factor-chart"
-
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 
-const iconMap: any = {
+const iconMap: Record<string, any> = {
   Diabetes: Droplets,
   "Heart Disease": Heart,
   "Kidney Disease": Shield,
@@ -46,218 +35,152 @@ const iconMap: any = {
   "Emergency Health Risk": AlertTriangle,
 }
 
-export default function ResultsPage() {
-  const router = useRouter()
+function ResultsContent() {
   const searchParams = useSearchParams()
+
+  const assessmentId = searchParams.get("id")
 
   const [result, setResult] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
   useEffect(() => {
-    const loadResult = async () => {
-      try {
-        setLoading(true)
-        setError("")
+    loadResult()
+  }, [assessmentId])
 
-        // -------------------------------
-        // Check user
-        // -------------------------------
+  const loadResult = async () => {
+    try {
+      setLoading(true)
+      setError("")
 
-        const {
-          data: userData,
-          error: userError,
-        } = await supabase.auth.getUser()
+      // Check logged-in user
+      const {
+        data: userData,
+        error: userError,
+      } = await supabase.auth.getUser()
 
-        if (userError || !userData.user) {
-          router.push("/login")
-          return
-        }
+      if (userError || !userData.user) {
+        setError("Please log in to view your assessment.")
+        return
+      }
 
-        const user = userData.user
+      // If an assessment ID exists, load that assessment.
+      // Otherwise load the latest assessment.
+      let query = supabase
+        .from("health_assessments")
+        .select("*")
+        .eq("user_id", userData.user.id)
 
-        // -------------------------------
-        // Get selected assessment ID
-        // -------------------------------
-
-        const assessmentId =
-          searchParams.get("id")
-
-        let query = supabase
-          .from("health_assessments")
-          .select(
-            "id, overall_score, summary, result_data, created_at"
-          )
-          .eq("user_id", user.id)
-
-        // If ID exists, get that exact assessment.
-        // Otherwise get latest assessment.
-
-        if (assessmentId) {
-          query = query.eq(
-            "id",
-            assessmentId
-          )
-        } else {
-          query = query.order(
-            "created_at",
-            {
-              ascending: false,
-            }
-          )
-        }
-
-        const {
-          data,
-          error: assessmentError,
-        } = await query
-          .limit(1)
-          .maybeSingle()
-
-        if (assessmentError) {
-          console.error(
-            "Result loading error:",
-            assessmentError
-          )
-
-          setError(
-            "Unable to load this assessment."
-          )
-
-          return
-        }
-
-        if (!data) {
-          setResult(null)
-          return
-        }
-
-        // -------------------------------
-        // Use saved result data
-        // -------------------------------
-
-        if (data.result_data) {
-          setResult(
-            data.result_data
-          )
-        } else {
-          setResult({
-            overallScore:
-              data.overall_score,
-
-            summary:
-              data.summary,
-
-            riskResults: [],
-
-            dietRecommendations: [],
-
-            lifestyleRecommendations: [],
-
-            preventiveCare: [],
-
-            disclaimer:
-              "This application does not provide medical diagnosis and should not replace professional medical advice.",
+      if (assessmentId) {
+        query = query.eq("id", assessmentId)
+      } else {
+        query = query
+          .order("created_at", {
+            ascending: false,
           })
-        }
-      } catch (error) {
+          .limit(1)
+      }
+
+      const {
+        data,
+        error: assessmentError,
+      } = await query.maybeSingle()
+
+      if (assessmentError) {
         console.error(
-          "Results page error:",
-          error
+          "Assessment loading error:",
+          assessmentError
         )
 
         setError(
-          "Something went wrong while loading the result."
+          "Unable to load the assessment."
         )
-      } finally {
-        setLoading(false)
+
+        return
       }
+
+      if (!data) {
+        setError(
+          "No assessment found."
+        )
+
+        return
+      }
+
+      /*
+       * Your Supabase table stores the complete
+       * prediction response inside result_data.
+       */
+      let savedResult = data.result_data
+
+      if (typeof savedResult === "string") {
+        try {
+          savedResult = JSON.parse(savedResult)
+        } catch {
+          savedResult = null
+        }
+      }
+
+      if (!savedResult) {
+        setError(
+          "Assessment result data is missing."
+        )
+
+        return
+      }
+
+      setResult(savedResult)
+    } catch (error) {
+      console.error(
+        "Results error:",
+        error
+      )
+
+      setError(
+        "Something went wrong while loading the result."
+      )
+    } finally {
+      setLoading(false)
     }
+  }
 
-    loadResult()
-  }, [
-    router,
-    searchParams,
-  ])
-
-  // -------------------------------
+  // -----------------------------
   // Loading
-  // -------------------------------
+  // -----------------------------
 
   if (loading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
-
         <div className="flex flex-col items-center gap-3">
-
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
 
           <p className="text-muted-foreground">
-            Loading your health results...
+            Loading your results...
           </p>
-
         </div>
-
       </div>
     )
   }
 
-  // -------------------------------
+  // -----------------------------
   // Error
-  // -------------------------------
+  // -----------------------------
 
-  if (error) {
+  if (error || !result) {
     return (
       <div className="space-y-6">
-
         <Card>
-
           <CardContent className="p-8 text-center">
 
-            <AlertTriangle className="h-10 w-10 mx-auto mb-4 text-red-500" />
+            <AlertTriangle className="h-10 w-10 mx-auto mb-4 text-risk-medium" />
 
             <h1 className="text-2xl font-bold mb-3">
               Unable to Load Results
             </h1>
 
             <p className="text-muted-foreground mb-5">
-              {error}
-            </p>
-
-            <Button asChild>
-              <Link href="/history">
-                Back to History
-              </Link>
-            </Button>
-
-          </CardContent>
-
-        </Card>
-
-      </div>
-    )
-  }
-
-  // -------------------------------
-  // No result
-  // -------------------------------
-
-  if (!result) {
-    return (
-      <div className="space-y-6">
-
-        <Card>
-
-          <CardContent className="p-8 text-center">
-
-            <Activity className="h-10 w-10 mx-auto mb-4 text-primary" />
-
-            <h1 className="text-2xl font-bold mb-3">
-              No Assessment Found
-            </h1>
-
-            <p className="text-muted-foreground mb-5">
-              Please complete a health assessment first.
+              {error ||
+                "No assessment result was found."}
             </p>
 
             <Button asChild>
@@ -267,31 +190,31 @@ export default function ResultsPage() {
             </Button>
 
           </CardContent>
-
         </Card>
-
       </div>
     )
   }
 
-  // -------------------------------
-  // Prepare data
-  // -------------------------------
+  // -----------------------------
+  // Risk results
+  // -----------------------------
 
-  const riskResults =
-    Array.isArray(
-      result.riskResults
-    )
-      ? result.riskResults.map(
-          (item: any) => ({
-            ...item,
-            icon:
-              iconMap[
-                item.disease
-              ] || Activity,
-          })
-        )
-      : []
+  const riskResults = Array.isArray(
+    result.riskResults
+  )
+    ? result.riskResults.map(
+        (item: any) => ({
+          ...item,
+          icon:
+            iconMap[item.disease] ||
+            Activity,
+        })
+      )
+    : []
+
+  // -----------------------------
+  // Safe recommendation arrays
+  // -----------------------------
 
   const dietRecommendations =
     Array.isArray(
@@ -317,7 +240,9 @@ export default function ResultsPage() {
   return (
     <div className="space-y-6">
 
+      {/* ============================= */}
       {/* HEADER */}
+      {/* ============================= */}
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 
@@ -328,7 +253,7 @@ export default function ResultsPage() {
           </h1>
 
           <p className="text-muted-foreground">
-            Saved assessment result
+            Based on your latest assessment
           </p>
 
         </div>
@@ -338,12 +263,10 @@ export default function ResultsPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() =>
-              window.print()
-            }
+            onClick={() => window.print()}
           >
             <Download className="h-4 w-4 mr-2" />
-            Export
+            Export PDF
           </Button>
 
           <Button
@@ -351,17 +274,26 @@ export default function ResultsPage() {
             size="sm"
             onClick={async () => {
               try {
-                await navigator.clipboard.writeText(
-                  window.location.href
-                )
+                if (navigator.share) {
+                  await navigator.share({
+                    title:
+                      "My Health Risk Analysis",
+                    text:
+                      "View my health risk assessment.",
+                    url:
+                      window.location.href,
+                  })
+                } else {
+                  await navigator.clipboard.writeText(
+                    window.location.href
+                  )
 
-                alert(
-                  "Results link copied!"
-                )
+                  alert(
+                    "Result link copied."
+                  )
+                }
               } catch {
-                alert(
-                  "Unable to copy the link."
-                )
+                // User cancelled sharing.
               }
             }}
           >
@@ -383,7 +315,9 @@ export default function ResultsPage() {
 
       </div>
 
-      {/* SCORE */}
+      {/* ============================= */}
+      {/* OVERALL SCORE */}
+      {/* ============================= */}
 
       <Card className="border-primary/20 bg-primary/5">
 
@@ -391,12 +325,12 @@ export default function ResultsPage() {
 
           <div className="flex flex-col md:flex-row md:items-center gap-6">
 
-            <div>
+            <div className="flex-shrink-0">
 
               <div className="w-24 h-24 rounded-full bg-primary/10 border-4 border-primary flex items-center justify-center">
 
                 <span className="text-3xl font-bold text-primary">
-                  {result.overallScore}
+                  {result.overallScore ?? 0}
                 </span>
 
               </div>
@@ -405,12 +339,13 @@ export default function ResultsPage() {
 
             <div className="flex-1">
 
-              <h2 className="text-xl font-bold mb-2">
+              <h2 className="text-xl font-bold text-foreground mb-2">
                 Overall Health Score
               </h2>
 
-              <p className="text-muted-foreground">
-                {result.summary}
+              <p className="text-muted-foreground mb-3">
+                {result.summary ||
+                  "Your health assessment has been completed."}
               </p>
 
             </div>
@@ -421,39 +356,56 @@ export default function ResultsPage() {
 
       </Card>
 
+      {/* ============================= */}
       {/* DISEASE RISK */}
+      {/* ============================= */}
 
       <div>
 
-        <h2 className="text-lg font-semibold mb-4">
+        <h2 className="text-lg font-semibold text-foreground mb-4">
           Disease Risk Analysis
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {riskResults.length > 0 ? (
 
-          {riskResults.map(
-            (
-              item: any,
-              index: number
-            ) => (
-              <RiskMeter
-                key={index}
-                {...item}
-              />
-            )
-          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
-        </div>
+            {riskResults.map(
+              (item: any, index: number) => (
+                <RiskMeter
+                  key={index}
+                  {...item}
+                />
+              )
+            )}
+
+          </div>
+
+        ) : (
+
+          <Card>
+            <CardContent className="p-6 text-center text-muted-foreground">
+              No disease risk information available.
+            </CardContent>
+          </Card>
+
+        )}
 
       </div>
 
-      {/* CHART */}
+      {/* ============================= */}
+      {/* RISK FACTOR CHART */}
+      {/* ============================= */}
 
       <RiskFactorChart />
 
+      {/* ============================= */}
       {/* RECOMMENDATIONS */}
+      {/* ============================= */}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {/* Diet */}
 
         <Card>
 
@@ -481,21 +433,26 @@ export default function ResultsPage() {
 
           <CardContent className="space-y-3">
 
-            {dietRecommendations.map(
-              (
-                rec: any,
-                index: number
-              ) => (
-                <RecommendationCard
-                  key={index}
-                  {...rec}
-                />
+            {dietRecommendations.length > 0 ? (
+              dietRecommendations.map(
+                (rec: any, index: number) => (
+                  <RecommendationCard
+                    key={index}
+                    {...rec}
+                  />
+                )
               )
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No diet recommendations available.
+              </p>
             )}
 
           </CardContent>
 
         </Card>
+
+        {/* Lifestyle */}
 
         <Card>
 
@@ -523,21 +480,26 @@ export default function ResultsPage() {
 
           <CardContent className="space-y-3">
 
-            {lifestyleRecommendations.map(
-              (
-                rec: any,
-                index: number
-              ) => (
-                <RecommendationCard
-                  key={index}
-                  {...rec}
-                />
+            {lifestyleRecommendations.length > 0 ? (
+              lifestyleRecommendations.map(
+                (rec: any, index: number) => (
+                  <RecommendationCard
+                    key={index}
+                    {...rec}
+                  />
+                )
               )
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No lifestyle recommendations available.
+              </p>
             )}
 
           </CardContent>
 
         </Card>
+
+        {/* Preventive Care */}
 
         <Card>
 
@@ -565,16 +527,19 @@ export default function ResultsPage() {
 
           <CardContent className="space-y-3">
 
-            {preventiveCare.map(
-              (
-                rec: any,
-                index: number
-              ) => (
-                <RecommendationCard
-                  key={index}
-                  {...rec}
-                />
+            {preventiveCare.length > 0 ? (
+              preventiveCare.map(
+                (rec: any, index: number) => (
+                  <RecommendationCard
+                    key={index}
+                    {...rec}
+                  />
+                )
               )
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No preventive care recommendations available.
+              </p>
             )}
 
           </CardContent>
@@ -583,7 +548,9 @@ export default function ResultsPage() {
 
       </div>
 
+      {/* ============================= */}
       {/* DISCLAIMER */}
+      {/* ============================= */}
 
       <Card className="border-risk-medium/30 bg-risk-medium/5">
 
@@ -595,7 +562,7 @@ export default function ResultsPage() {
 
             <div>
 
-              <h3 className="font-medium mb-1">
+              <h3 className="font-medium text-foreground mb-1">
                 Important Disclaimer
               </h3>
 
@@ -612,7 +579,9 @@ export default function ResultsPage() {
 
       </Card>
 
-      {/* BUTTONS */}
+      {/* ============================= */}
+      {/* BOTTOM BUTTONS */}
+      {/* ============================= */}
 
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4 py-6">
 
@@ -634,13 +603,37 @@ export default function ResultsPage() {
           variant="outline"
           asChild
         >
-          <Link href="/history">
-            Back to History
+          <Link href="/dashboard">
+            Back to Dashboard
           </Link>
         </Button>
 
       </div>
 
     </div>
+  )
+}
+
+// ============================================
+// PAGE WITH SUSPENSE
+// ============================================
+
+export default function ResultsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[400px] items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+
+            <p className="text-muted-foreground">
+              Loading results...
+            </p>
+          </div>
+        </div>
+      }
+    >
+      <ResultsContent />
+    </Suspense>
   )
 }
