@@ -31,62 +31,76 @@ export default function SignupPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+
   const [message, setMessage] = useState("")
   const [loading, setLoading] = useState(false)
+
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const handleSignup = async (e: React.FormEvent) => {
-  e.preventDefault()
+    e.preventDefault()
 
-  setLoading(true)
-  setMessage("")
+    setMessage("")
 
-  console.log("=== SIGNUP TEST ===")
-  console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL)
-  console.log("Email:", email)
-
-  try {
-    const { data, error } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-    })
-
-    console.log("SIGNUP DATA:", data)
-    console.log("SIGNUP ERROR:", error)
-
-    if (error) {
-      setMessage(
-        `Signup failed: ${error.message} ${
-          error.code ? `(Code: ${error.code})` : ""
-        }`
-      )
-      setLoading(false)
+    // Check password length
+    if (password.length < 6) {
+      setMessage("Password must be at least 6 characters.")
       return
     }
 
-    setMessage("Account created successfully!")
+    // Check confirm password
+    if (password !== confirmPassword) {
+      setMessage("Passwords do not match.")
+      return
+    }
 
-    setTimeout(() => {
-      router.push("/login")
-    }, 1500)
-  } catch (err) {
-    console.error("SIGNUP EXCEPTION:", err)
+    setLoading(true)
 
-    setMessage(
-      err instanceof Error
-        ? err.message
-        : "Signup failed."
-    )
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            full_name: fullName.trim(),
+          },
+        },
+      })
 
-    setLoading(false)
+      if (error) {
+        console.error("Signup error:", error)
+        setMessage(error.message)
+        setLoading(false)
+        return
+      }
+
+      setMessage("Account created successfully!")
+
+      setTimeout(() => {
+        router.push("/login")
+      }, 1500)
+    } catch (error) {
+      console.error("Signup error:", error)
+
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again."
+      )
+
+      setLoading(false)
+    }
   }
-}
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-100 p-4">
+
       <Card className="w-full max-w-md shadow-xl border-0 rounded-2xl">
 
         <CardHeader className="text-center space-y-3">
+
+          {/* Logo */}
 
           <div className="mx-auto h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
             <HeartPulse className="h-8 w-8 text-blue-600" />
@@ -116,6 +130,7 @@ export default function SignupPage() {
               <User className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
 
               <Input
+                type="text"
                 placeholder="Full Name"
                 className="pl-10 h-11"
                 value={fullName}
@@ -161,20 +176,19 @@ export default function SignupPage() {
                 placeholder="Password"
                 className="pl-10 pr-10 h-11"
                 value={password}
-                onChange={(e) =>
+                onChange={(e) => {
                   setPassword(e.target.value)
-                }
+                  setMessage("")
+                }}
                 required
               />
 
               <button
                 type="button"
                 onClick={() =>
-                  setShowPassword(
-                    !showPassword
-                  )
+                  setShowPassword(!showPassword)
                 }
-                className="absolute right-3 top-3 text-gray-400"
+                className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
                 aria-label={
                   showPassword
                     ? "Hide password"
@@ -198,31 +212,59 @@ export default function SignupPage() {
 
               <Input
                 type={
-                  showPassword
+                  showConfirmPassword
                     ? "text"
                     : "password"
                 }
                 placeholder="Confirm Password"
-                className="pl-10 h-11"
+                className="pl-10 pr-10 h-11"
                 value={confirmPassword}
-                onChange={(e) =>
-                  setConfirmPassword(
-                    e.target.value
-                  )
-                }
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value)
+                  setMessage("")
+                }}
                 required
               />
 
+              <button
+                type="button"
+                onClick={() =>
+                  setShowConfirmPassword(
+                    !showConfirmPassword
+                  )
+                }
+                className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                aria-label={
+                  showConfirmPassword
+                    ? "Hide confirm password"
+                    : "Show confirm password"
+                }
+              >
+                {showConfirmPassword ? (
+                  <EyeOff size={20} />
+                ) : (
+                  <Eye size={20} />
+                )}
+              </button>
+
             </div>
 
-            {/* Message */}
+            {/* Password mismatch message */}
+
+            {password &&
+              confirmPassword &&
+              password !== confirmPassword && (
+                <p className="text-sm text-center text-red-500">
+                  Passwords do not match.
+                </p>
+              )}
+
+            {/* Success / Error message */}
 
             {message && (
               <p
                 className={`text-sm text-center ${
-                  message.includes(
-                    "successfully"
-                  )
+                  message.includes("successfully")
                     ? "text-green-600"
                     : "text-red-500"
                 }`}
@@ -231,7 +273,7 @@ export default function SignupPage() {
               </p>
             )}
 
-            {/* Submit */}
+            {/* Create Account */}
 
             <Button
               type="submit"
@@ -245,7 +287,7 @@ export default function SignupPage() {
 
           </form>
 
-          {/* Login Link */}
+          {/* Login */}
 
           <div className="mt-6 text-center text-sm">
 
@@ -263,6 +305,7 @@ export default function SignupPage() {
         </CardContent>
 
       </Card>
+
     </div>
   )
 }
