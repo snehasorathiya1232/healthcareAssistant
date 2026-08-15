@@ -35,7 +35,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
-  cconst handleSignup = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
   e.preventDefault()
 
   setLoading(true)
