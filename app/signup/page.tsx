@@ -35,60 +35,52 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault()
+  cconst handleSignup = async (e: React.FormEvent) => {
+  e.preventDefault()
 
-    setMessage("")
+  setLoading(true)
+  setMessage("")
 
-    if (password !== confirmPassword) {
-      setMessage("Passwords do not match.")
-      return
-    }
+  console.log("=== SIGNUP TEST ===")
+  console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL)
+  console.log("Email:", email)
 
-    if (password.length < 6) {
-      setMessage("Password must be at least 6 characters.")
-      return
-    }
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+    })
 
-    setLoading(true)
+    console.log("SIGNUP DATA:", data)
+    console.log("SIGNUP ERROR:", error)
 
-    try {
-      const redirectUrl =
-        typeof window !== "undefined"
-          ? `${window.location.origin}/login`
-          : undefined
-
-      const { error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          data: {
-            full_name: fullName.trim(),
-          },
-          emailRedirectTo: redirectUrl,
-        },
-      })
-
-      if (error) {
-        console.error("Signup error:", error)
-        setMessage(error.message)
-        setLoading(false)
-        return
-      }
-
+    if (error) {
       setMessage(
-        "Account created successfully! Redirecting to login..."
+        `Signup failed: ${error.message} ${
+          error.code ? `(Code: ${error.code})` : ""
+        }`
       )
-
-      setTimeout(() => {
-        router.push("/login")
-      }, 1500)
-    } catch (error) {
-      console.error("Signup error:", error)
-      setMessage("Something went wrong. Please try again.")
       setLoading(false)
+      return
     }
+
+    setMessage("Account created successfully!")
+
+    setTimeout(() => {
+      router.push("/login")
+    }, 1500)
+  } catch (err) {
+    console.error("SIGNUP EXCEPTION:", err)
+
+    setMessage(
+      err instanceof Error
+        ? err.message
+        : "Signup failed."
+    )
+
+    setLoading(false)
   }
+}
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-100 p-4">
