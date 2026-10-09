@@ -33,10 +33,10 @@ export function Header() {
 
         <div className="hidden md:flex items-center gap-3">
           <Button variant="ghost" asChild>
-            <Link href="/signup">Sign In</Link>
+            <Link href="/login">Sign In</Link>
           </Button>
           <Button asChild>
-            <Link href="/predict">Check Symptoms</Link>
+            <Link href="/signup">Get Started</Link>
           </Button>
         </div>
 
@@ -54,21 +54,21 @@ export function Header() {
       {isMenuOpen && (
         <div className="md:hidden border-t border-border bg-background">
           <nav className="container mx-auto px-4 py-4 flex flex-col gap-4">
-            <Link href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="#features" onClick={() => setIsMenuOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Features
             </Link>
-            <Link href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="#how-it-works" onClick={() => setIsMenuOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               How It Works
             </Link>
-            <Link href="#diseases" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="#diseases" onClick={() => setIsMenuOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Predictions
             </Link>
             <div className="flex flex-col gap-2 pt-4 border-t border-border">
               <Button variant="ghost" asChild className="w-full justify-center">
-                <Link href="/signup">Sign In</Link>
+                <Link href="/login">Sign In</Link>
               </Button>
               <Button asChild className="w-full">
-                <Link href="/predict">Check Symptoms</Link>
+                <Link href="/signup">Get Started</Link>
               </Button>
             </div>
           </nav>

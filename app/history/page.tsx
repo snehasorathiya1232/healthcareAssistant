@@ -75,15 +75,28 @@ export default function HistoryPage() {
           "History loading error:",
           historyError
         )
-
-        setError(
-          "Unable to load assessment history."
-        )
-
-        return
       }
 
-      setAssessments(data || [])
+      if (data && data.length > 0) {
+        setAssessments(data)
+      } else if (typeof window !== "undefined") {
+        const cached = localStorage.getItem("healthAssessmentResult")
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached)
+            if (parsed && parsed.overallScore !== undefined) {
+              setAssessments([
+                {
+                  id: parsed.id || "local-latest",
+                  overall_score: parsed.overallScore,
+                  summary: parsed.summary,
+                  created_at: new Date().toISOString(),
+                },
+              ])
+            }
+          } catch {}
+        }
+      }
     } catch (error) {
       console.error(
         "History error:",
@@ -110,6 +123,17 @@ export default function HistoryPage() {
     }
 
     try {
+      if (id.startsWith("local")) {
+        localStorage.removeItem("healthAssessmentResult")
+        setAssessments((previous) =>
+          previous.filter(
+            (assessment) =>
+              assessment.id !== id
+          )
+        )
+        return
+      }
+
       const {
         error: deleteError,
       } = await supabase

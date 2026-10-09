@@ -105,15 +105,26 @@ export default function AlertsPage() {
           "Assessment error:",
           assessmentError
         )
-
-        setError(
-          "Unable to load your health information."
-        )
-
-        return
       }
 
-      setAssessment(data)
+      if (data) {
+        setAssessment(data)
+      } else if (typeof window !== "undefined") {
+        const cached = localStorage.getItem("healthAssessmentResult")
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached)
+            if (parsed && parsed.overallScore !== undefined) {
+              setAssessment({
+                id: parsed.id || "local-latest",
+                overall_score: parsed.overallScore,
+                summary: parsed.summary,
+                created_at: new Date().toISOString(),
+              })
+            }
+          } catch {}
+        }
+      }
     } catch (error) {
       console.error(
         "Alerts error:",

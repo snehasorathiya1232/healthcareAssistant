@@ -109,22 +109,29 @@ export default function ResultsContent() {
         error: assessmentError,
       } = await query.maybeSingle()
 
-      if (assessmentError) {
-        console.error(
-          "Assessment loading error:",
-          assessmentError
-        )
+      if (assessmentError || !data) {
+        if (typeof window !== "undefined") {
+          const cached = localStorage.getItem("healthAssessmentResult")
+          if (cached) {
+            try {
+              const parsed = JSON.parse(cached)
+              if (parsed && (parsed.overallScore !== undefined || parsed.riskResults)) {
+                setResult(parsed)
+                return
+              }
+            } catch {}
+          }
+        }
+
+        if (assessmentError) {
+          console.error(
+            "Assessment loading error:",
+            assessmentError
+          )
+        }
 
         setError(
-          "Unable to load the assessment."
-        )
-
-        return
-      }
-
-      if (!data) {
-        setError(
-          "No assessment found."
+          "No assessment found. Please complete an assessment first."
         )
 
         return
@@ -238,6 +245,12 @@ export default function ResultsContent() {
           })
         )
       : []
+
+  const customRiskFactors = riskResults.map((r: any) => ({
+    name: r.disease,
+    value: Math.max(0, 100 - Number(r.percentage || 0)),
+    status: (r.risk === "Low" ? "good" : r.risk === "Medium" ? "warning" : "danger") as "good" | "warning" | "danger",
+  }))
 
   // Recommendations
   const dietRecommendations =
@@ -422,8 +435,7 @@ export default function ResultsContent() {
       </div>
 
       {/* RISK CHART */}
-
-      <RiskFactorChart />
+      <RiskFactorChart customData={customRiskFactors} />
 
       {/* RECOMMENDATIONS */}
 

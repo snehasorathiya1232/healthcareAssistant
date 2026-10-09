@@ -91,6 +91,7 @@ export default function PredictPage() {
     useState<FormData>(initialFormData)
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState("")
 
   const updateFormData = (
     updates: Partial<FormData>
@@ -116,6 +117,7 @@ export default function PredictPage() {
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true)
+      setSubmitError("")
 
       // Get logged-in user's session
       const {
@@ -127,7 +129,6 @@ export default function PredictPage() {
         sessionError ||
         !sessionData.session
       ) {
-        alert("Please login again.")
         router.push("/login")
         return
       }
@@ -153,7 +154,7 @@ export default function PredictPage() {
       const data = await res.json()
 
       if (!res.ok) {
-        alert(
+        setSubmitError(
           data.error ||
             "Assessment failed. Please try again."
         )
@@ -167,14 +168,18 @@ export default function PredictPage() {
       )
 
       // Go to results
-      router.push("/results")
+      if (data.id) {
+        router.push(`/results?id=${encodeURIComponent(data.id)}`)
+      } else {
+        router.push("/results")
+      }
     } catch (error) {
       console.error(
         "Assessment error:",
         error
       )
 
-      alert(
+      setSubmitError(
         "Something went wrong. Please try again."
       )
     } finally {

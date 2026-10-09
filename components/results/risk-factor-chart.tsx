@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts"
 
-const data = [
+const defaultData: RiskFactorItem[] = [
   { name: "Blood Pressure", value: 72, status: "good" },
   { name: "Cholesterol", value: 58, status: "warning" },
   { name: "Blood Sugar", value: 85, status: "good" },
@@ -21,7 +21,18 @@ const getBarColor = (status: string) => {
   }
 }
 
-export function RiskFactorChart() {
+export interface RiskFactorItem {
+  name: string
+  value: number
+  status: "good" | "warning" | "danger"
+}
+
+interface RiskFactorChartProps {
+  customData?: RiskFactorItem[]
+}
+
+export function RiskFactorChart({ customData }: RiskFactorChartProps) {
+  const chartData = customData && customData.length > 0 ? customData : defaultData
   return (
     <Card>
       <CardHeader>
@@ -31,7 +42,7 @@ export function RiskFactorChart() {
       <CardContent>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
+            <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" horizontal={true} vertical={false} />
               <XAxis 
                 type="number" 
@@ -61,7 +72,7 @@ export function RiskFactorChart() {
                 formatter={(value: number) => [`${value}/100`, 'Score']}
               />
               <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={24}>
-                {data.map((entry, index) => (
+                {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={getBarColor(entry.status)} />
                 ))}
               </Bar>

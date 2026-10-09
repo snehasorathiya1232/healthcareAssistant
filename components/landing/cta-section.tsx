@@ -39,12 +39,12 @@ export function CTASection() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" variant="secondary" className="h-12 px-8 text-base" asChild>
               <Link href="/signup">
-                Get Started Free
+                Start Free Assessment
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
             <Button size="lg" variant="outline" className="h-12 px-8 text-base border-primary-foreground/20 text-black hover:bg-primary-foreground/10" asChild>
-              <Link href="/signup">
+              <Link href="/login">
                 Sign In
               </Link>
             </Button>
