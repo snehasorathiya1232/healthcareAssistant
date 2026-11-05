@@ -29,79 +29,41 @@ export async function POST(req: Request) {
       "sb_publishable_RPRvYAfvx8FYGwZarM5ECw_FFQALkum"
 
     // -----------------------------------------
-    // Get Authorization token
+    // Get Authorization token (optional for 1 free demo assessment)
     // -----------------------------------------
 
-    const authHeader =
-      req.headers.get("Authorization")
+    const authHeader = req.headers.get("Authorization")
+    let user: any = null
+    let supabase: any = null
 
-    if (!authHeader) {
-      return NextResponse.json(
-        {
-          error:
-            "You are not logged in. Please login again.",
-        },
-        { status: 401 }
-      )
-    }
+    if (authHeader) {
+      const token = authHeader.replace("Bearer ", "").trim()
 
-    const token = authHeader.replace(
-      "Bearer ",
-      ""
-    )
+      if (token && token !== "demo" && token !== "null" && token !== "undefined") {
+        supabase = createClient(
+          supabaseUrl,
+          supabaseAnonKey,
+          {
+            global: {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            },
+          }
+        )
 
-    if (!token) {
-      return NextResponse.json(
-        {
-          error:
-            "Authentication token is missing.",
-        },
-        { status: 401 }
-      )
-    }
+        const {
+          data: userData,
+          error: userError,
+        } = await supabase.auth.getUser(token)
 
-    // -----------------------------------------
-    // IMPORTANT:
-    // Create Supabase client WITH user's token
-    // -----------------------------------------
-
-    const supabase = createClient(
-      supabaseUrl,
-      supabaseAnonKey,
-      {
-        global: {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
+        if (!userError && userData?.user) {
+          user = userData.user
+        } else if (userError) {
+          console.warn("User auth session lookup failed, proceeding as demo:", userError.message)
+        }
       }
-    )
-
-    // -----------------------------------------
-    // Verify logged-in user
-    // -----------------------------------------
-
-    const {
-      data: userData,
-      error: userError,
-    } = await supabase.auth.getUser(token)
-
-    if (userError || !userData.user) {
-      console.error(
-        "USER AUTH ERROR:",
-        userError
-      )
-
-      return NextResponse.json(
-        {
-          error:
-            "Your login session is invalid. Please login again.",
-        },
-        { status: 401 }
-      )
     }
-
-    const user = userData.user
 
     // -----------------------------------------
     // Validate health data strictly
@@ -222,36 +184,39 @@ export async function POST(req: Request) {
           "Screening Estimate Notice: Emergency warning signs detected. This screening estimate is not a clinical diagnosis. Please seek immediate professional medical attention.",
       }
 
-      // Save emergency assessment
+      // Save emergency assessment if user is logged in
       let emergencyId = null
-      const { data: emergencyRow, error: emergencySaveError } =
-        await supabase
-          .from("health_assessments")
-          .insert({
-            user_id: user.id,
-            overall_score: 20,
-            summary:
-              emergencyResult.summary,
-            input_data: data,
-            result_data: emergencyResult,
-          })
-          .select("id")
-          .maybeSingle()
+      if (user && supabase) {
+        const { data: emergencyRow, error: emergencySaveError } =
+          await supabase
+            .from("health_assessments")
+            .insert({
+              user_id: user.id,
+              overall_score: 20,
+              summary:
+                emergencyResult.summary,
+              input_data: data,
+              result_data: emergencyResult,
+            })
+            .select("id")
+            .maybeSingle()
 
-      if (emergencyRow?.id) {
-        emergencyId = emergencyRow.id
-      }
+        if (emergencyRow?.id) {
+          emergencyId = emergencyRow.id
+        }
 
-      if (emergencySaveError) {
-        console.warn(
-          "EMERGENCY SAVE WARNING:",
-          emergencySaveError
-        )
+        if (emergencySaveError) {
+          console.warn(
+            "EMERGENCY SAVE WARNING:",
+            emergencySaveError
+          )
+        }
       }
 
       return NextResponse.json({
         ...emergencyResult,
         id: emergencyId,
+        isDemo: !user,
       })
     }
 
@@ -267,38 +232,41 @@ export async function POST(req: Request) {
     const clinicalResult = evaluateHealthAssessment(validatedData)
 
     // -----------------------------------------
-    // SAVE ASSESSMENT TO SUPABASE
+    // SAVE ASSESSMENT TO SUPABASE (If user is logged in)
     // -----------------------------------------
     let savedId = null
-    const {
-      data: savedRow,
-      error: saveError,
-    } = await supabase
-      .from("health_assessments")
-      .insert({
-        user_id: user.id,
-        overall_score: clinicalResult.overallScore,
-        summary: clinicalResult.summary,
-        input_data: data,
-        result_data: clinicalResult,
-      })
-      .select("id")
-      .maybeSingle()
+    if (user && supabase) {
+      const {
+        data: savedRow,
+        error: saveError,
+      } = await supabase
+        .from("health_assessments")
+        .insert({
+          user_id: user.id,
+          overall_score: clinicalResult.overallScore,
+          summary: clinicalResult.summary,
+          input_data: data,
+          result_data: clinicalResult,
+        })
+        .select("id")
+        .maybeSingle()
 
-    if (savedRow?.id) {
-      savedId = savedRow.id
-    }
+      if (savedRow?.id) {
+        savedId = savedRow.id
+      }
 
-    if (saveError) {
-      console.warn(
-        "ASSESSMENT SAVE WARNING:",
-        saveError
-      )
+      if (saveError) {
+        console.warn(
+          "ASSESSMENT SAVE WARNING:",
+          saveError
+        )
+      }
     }
 
     return NextResponse.json({
       ...clinicalResult,
       id: savedId,
+      isDemo: !user,
     })
   } catch (error) {
     console.error(

@@ -29,6 +29,7 @@ import {
   Pill,
   AlertTriangle,
   Loader2,
+  Sparkles,
 } from "lucide-react"
 
 import { RiskMeter } from "@/components/results/risk-meter"
@@ -52,6 +53,7 @@ export default function ResultsContent() {
   const [result, setResult] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [isDemoUser, setIsDemoUser] = useState(false)
 
   useEffect(() => {
     loadResult()
@@ -68,10 +70,30 @@ export default function ResultsContent() {
         error: userError,
       } = await supabase.auth.getUser()
 
-      if (userError || !userData.user) {
+      if (userError || !userData?.user) {
+        // If not logged in, check if a demo assessment result exists in localStorage
+        if (typeof window !== "undefined") {
+          const cached = localStorage.getItem("healthAssessmentResult")
+          if (cached) {
+            try {
+              const parsed = JSON.parse(cached)
+              if (parsed && (parsed.overallScore !== undefined || parsed.riskResults)) {
+                setResult(parsed)
+                setIsDemoUser(true)
+                setLoading(false)
+                return
+              }
+            } catch (err) {
+              console.error("Error parsing demo result:", err)
+            }
+          }
+        }
+
         router.push("/login")
         return
       }
+
+      setIsDemoUser(false)
 
       // Get assessment ID from browser URL
       const params = new URLSearchParams(
@@ -686,6 +708,36 @@ export default function ResultsContent() {
         </CardContent>
 
       </Card>
+
+      {/* DEMO USER ACCOUNT CREATION CALLOUT */}
+      {(isDemoUser || result?.isDemo) && (
+        <Card className="border-primary/40 bg-gradient-to-r from-primary/10 via-primary/5 to-background shadow-md">
+          <CardHeader className="text-center pb-2">
+            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 text-primary">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <CardTitle className="text-2xl font-bold">
+              Want to Continue Daily Health Assessments?
+            </CardTitle>
+            <CardDescription className="text-base max-w-xl mx-auto">
+              You just completed your 1 free demo assessment! Create a free account to continue daily health assessments, save your health history, track vitals over time, and receive personalized recommendations.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 pb-6">
+            <Button size="lg" className="h-11 px-8 text-base shadow-sm" asChild>
+              <Link href="/signup">
+                Create Free Account
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button size="lg" variant="outline" className="h-11 px-6 text-base" asChild>
+              <Link href="/login">
+                Already have an account? Sign In
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* BOTTOM BUTTONS */}
 

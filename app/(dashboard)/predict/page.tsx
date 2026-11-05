@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import {
   validateStep1,
@@ -21,6 +22,7 @@ import {
   Check,
   Loader2,
   AlertCircle,
+  Sparkles,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -97,6 +99,26 @@ export default function PredictPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState("")
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+  const [hasCompletedDemo, setHasCompletedDemo] = useState(false)
+
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const { data } = await supabase.auth.getSession()
+        if (data?.session) {
+          setIsAuthenticated(true)
+        } else {
+          setIsAuthenticated(false)
+          const demoDone = typeof window !== "undefined" && localStorage.getItem("hasCompletedDemo") === "true"
+          setHasCompletedDemo(Boolean(demoDone))
+        }
+      } catch {
+        setIsAuthenticated(false)
+      }
+    }
+    checkAuth()
+  }, [])
 
   const updateFormData = (updates: Partial<FormData>) => {
     setFormData((prev) => ({
@@ -165,26 +187,25 @@ export default function PredictPage() {
         return
       }
 
-      // Get logged-in user's session
+      // Check logged-in user's session (optional for 1 free demo)
       const {
         data: sessionData,
-        error: sessionError,
       } = await supabase.auth.getSession()
 
-      if (sessionError || !sessionData.session) {
-        router.push("/login")
-        return
+      const accessToken = sessionData?.session?.access_token
+
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
       }
 
-      const accessToken = sessionData.session.access_token
+      if (accessToken) {
+        headers["Authorization"] = `Bearer ${accessToken}`
+      }
 
-      // Send assessment + authentication token
+      // Send assessment
       const res = await fetch("/api/health-assessment", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers,
         body: JSON.stringify(formData),
       })
 
@@ -203,11 +224,16 @@ export default function PredictPage() {
       // Save result for Results page
       localStorage.setItem("healthAssessmentResult", JSON.stringify(data))
 
+      // If user took the free demo without an account, record that they used their 1 free demo
+      if (!accessToken) {
+        localStorage.setItem("hasCompletedDemo", "true")
+      }
+
       // Go to results
       if (data.id) {
         router.push(`/results?id=${encodeURIComponent(data.id)}`)
       } else {
-        router.push("/results")
+        router.push("/results?demo=true")
       }
     } catch (error) {
       console.error("Assessment error:", error)
@@ -258,8 +284,62 @@ export default function PredictPage() {
     }
   }
 
+  if (isAuthenticated === false && hasCompletedDemo) {
+    return (
+      <div className="max-w-2xl mx-auto py-10 px-4">
+        <Card className="border-primary/30 shadow-lg text-center p-6 md:p-8">
+          <CardHeader>
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Sparkles className="h-7 w-7" />
+            </div>
+            <CardTitle className="text-2xl font-bold">You Have Used Your 1 Free Demo</CardTitle>
+            <CardDescription className="text-base mt-2">
+              You have already experienced your 1 free demo assessment! Create a free account to continue daily health assessments, save your health history, and receive ongoing health alerts.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+            <Button size="lg" className="h-11 px-8 text-base w-full sm:w-auto shadow-sm" asChild>
+              <Link href="/signup">
+                Create Free Account
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button size="lg" variant="outline" className="h-11 px-6 text-base w-full sm:w-auto" asChild>
+              <Link href="/login">
+                Sign In
+              </Link>
+            </Button>
+            <Button size="lg" variant="ghost" className="h-11 px-6 text-base w-full sm:w-auto" asChild>
+              <Link href="/results">
+                View My Result
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+
+      {/* Demo Assessment Banner */}
+      {isAuthenticated === false && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm text-primary">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 flex-shrink-0" />
+            <span>
+              <strong>Free Demo Assessment:</strong> Try 1 full AI assessment without creating an account!
+            </span>
+          </div>
+          <Link
+            href="/signup"
+            className="text-xs font-semibold underline underline-offset-4 hover:text-primary/80 whitespace-nowrap"
+          >
+            Create Account for Daily Assessments &rarr;
+          </Link>
+        </div>
+      )}
 
       {/* Header */}
       <div>
