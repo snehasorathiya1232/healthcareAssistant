@@ -1,26 +1,12 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import {
+  validateHealthAssessment,
+  generateSafetyWarnings,
+} from "@/lib/validations/health-assessment"
+import { evaluateHealthAssessment } from "@/lib/clinical-models"
 
 type Risk = "Low" | "Medium" | "High"
-
-function riskLevel(score: number): Risk {
-  if (score >= 70) return "High"
-  if (score >= 40) return "Medium"
-  return "Low"
-}
-
-function clamp(
-  value: number,
-  min = 0,
-  max = 100
-): number {
-  return Math.min(Math.max(value, min), max)
-}
-
-function num(value: unknown): number {
-  const n = Number(value)
-  return Number.isFinite(n) ? n : 0
-}
 
 export async function POST(req: Request) {
   try {
@@ -118,44 +104,35 @@ export async function POST(req: Request) {
     const user = userData.user
 
     // -----------------------------------------
-    // Read health data
+    // Validate health data strictly
     // -----------------------------------------
 
-    const age = num(data.age)
-    const height = num(data.height)
-    const weight = num(data.weight)
-
-    const systolic = num(
-      data.bloodPressureSystolic
-    )
-
-    const diastolic = num(
-      data.bloodPressureDiastolic
-    )
-
-    const sugar = num(data.bloodSugar)
-
-    const cholesterol = num(
-      data.cholesterol
-    )
-
-    const heartRate = num(
-      data.heartRate
-    )
-
-    // -----------------------------------------
-    // Required fields
-    // -----------------------------------------
-
-    if (!age || !height || !weight) {
+    const validation = validateHealthAssessment(data)
+    if (!validation.isValid) {
       return NextResponse.json(
         {
-          error:
-            "Age, height, and weight are required.",
+          error: "Validation failed. Please correct the invalid inputs.",
+          errors: validation.errors,
         },
         { status: 400 }
       )
     }
+
+    const validatedData = validation.validatedData!
+    const {
+      age,
+      gender,
+      height,
+      weight,
+      bloodPressureSystolic: systolic,
+      bloodPressureDiastolic: diastolic,
+      bloodSugar: sugar,
+      cholesterol,
+      heartRate,
+      isPediatric,
+    } = validatedData
+
+    const safetyWarnings = generateSafetyWarnings(validatedData)
 
     // -----------------------------------------
     // Symptoms
@@ -196,6 +173,10 @@ export async function POST(req: Request) {
 
     if (hasEmergency) {
       const emergencyResult = {
+        gender,
+        isScreeningEstimate: true,
+        isPediatric,
+        safetyWarnings,
         overallScore: 20,
 
         summary:
@@ -205,7 +186,7 @@ export async function POST(req: Request) {
           {
             disease: "Emergency Health Risk",
 
-            risk: "High",
+            risk: "High" as Risk,
 
             percentage: 95,
 
@@ -238,7 +219,7 @@ export async function POST(req: Request) {
         ],
 
         disclaimer:
-          "This application does not provide medical diagnosis and should not replace professional medical advice.",
+          "Screening Estimate Notice: Emergency warning signs detected. This screening estimate is not a clinical diagnosis. Please seek immediate professional medical attention.",
       }
 
       // Save emergency assessment
@@ -275,502 +256,19 @@ export async function POST(req: Request) {
     }
 
     // -----------------------------------------
-    // BMI
+    // Clinical Model Evaluation Engine
+    // Uses validated models:
+    // - Diabetes: ADA Diabetes Risk Test & ADA 2024 Glycemic Criteria
+    // - Heart Disease: Framingham 10-Year General CVD Profile (D'Agostino 2008 / ATP III)
+    // - Kidney Disease: SCORED Clinical Screening Tool & CKD-EPI 2021 Equation
+    // - Liver Disease: FIB-4 Index & AASLD/EASL MASLD/ALD Framework
+    // - Breast Cancer: USPSTF 2024 / ACS Screening Guidelines & Gail Model Principles
     // -----------------------------------------
-
-    const bmi =
-      weight /
-      Math.pow(height / 100, 2)
-
-    // -----------------------------------------
-    // Risk scores
-    // -----------------------------------------
-
-    let diabetesScore = 0
-    let heartScore = 0
-    let kidneyScore = 0
-    let liverScore = 0
-    let breastCancerScore = 0
+    const clinicalResult = evaluateHealthAssessment(validatedData)
 
     // -----------------------------------------
-    // Age
+    // SAVE ASSESSMENT TO SUPABASE
     // -----------------------------------------
-
-    if (age > 45) {
-      diabetesScore += 15
-      heartScore += 15
-    }
-
-    // -----------------------------------------
-    // BMI
-    // -----------------------------------------
-
-    if (bmi >= 25) {
-      diabetesScore += 20
-      heartScore += 15
-      liverScore += 10
-    }
-
-    // -----------------------------------------
-    // Blood sugar
-    // -----------------------------------------
-
-    if (sugar >= 140) {
-      diabetesScore += 35
-    } else if (sugar >= 100) {
-      diabetesScore += 20
-    }
-
-    // -----------------------------------------
-    // Family history
-    // -----------------------------------------
-
-    if (data.familyDiabetes) {
-      diabetesScore += 15
-    }
-
-    if (data.familyHeartDisease) {
-      heartScore += 15
-    }
-
-    // -----------------------------------------
-    // Blood pressure
-    // -----------------------------------------
-
-    if (
-      systolic >= 140 ||
-      diastolic >= 90
-    ) {
-      heartScore += 30
-      kidneyScore += 25
-    } else if (
-      systolic >= 120 ||
-      diastolic >= 80
-    ) {
-      heartScore += 15
-      kidneyScore += 10
-    }
-
-    // -----------------------------------------
-    // Cholesterol
-    // -----------------------------------------
-
-    if (cholesterol >= 240) {
-      heartScore += 30
-    } else if (cholesterol >= 200) {
-      heartScore += 15
-    }
-
-    // -----------------------------------------
-    // Heart rate
-    // -----------------------------------------
-
-    if (
-      heartRate > 100 ||
-      (heartRate > 0 && heartRate < 55)
-    ) {
-      heartScore += 10
-    }
-
-    // -----------------------------------------
-    // Smoking
-    // -----------------------------------------
-
-    if (
-      data.smokingStatus === "current" ||
-      data.smokingStatus === "regular"
-    ) {
-      heartScore += 20
-      liverScore += 10
-    }
-
-    // -----------------------------------------
-    // Alcohol
-    // -----------------------------------------
-
-    if (
-      data.alcoholConsumption ===
-      "heavy"
-    ) {
-      liverScore += 30
-    }
-
-    // -----------------------------------------
-    // Exercise
-    // -----------------------------------------
-
-    if (
-      data.exerciseFrequency ===
-      "rarely"
-    ) {
-      diabetesScore += 10
-      heartScore += 10
-    }
-
-    if (
-      data.exerciseFrequency ===
-      "sedentary"
-    ) {
-      diabetesScore += 10
-      heartScore += 10
-    }
-
-    // -----------------------------------------
-    // Sleep
-    // -----------------------------------------
-
-    const sleepHours =
-      num(data.sleepHours)
-
-    if (
-      sleepHours > 0 &&
-      sleepHours < 6
-    ) {
-      heartScore += 10
-      diabetesScore += 5
-    }
-
-    // -----------------------------------------
-    // Stress
-    // -----------------------------------------
-
-    if (
-      data.stressLevel === "high"
-    ) {
-      heartScore += 15
-    }
-
-    // -----------------------------------------
-    // Breast cancer risk
-    // -----------------------------------------
-
-    if (data.gender === "female") {
-      if (age > 40) {
-        breastCancerScore += 20
-      }
-
-      if (data.familyCancer) {
-        breastCancerScore += 30
-      }
-
-      if (bmi >= 25) {
-        breastCancerScore += 10
-      }
-
-      if (
-        data.alcoholConsumption ===
-        "heavy"
-      ) {
-        breastCancerScore += 10
-      }
-
-      if (
-        data.exerciseFrequency ===
-        "rarely" ||
-        data.exerciseFrequency ===
-        "sedentary"
-      ) {
-        breastCancerScore += 10
-      }
-    }
-
-    // -----------------------------------------
-    // Symptoms
-    // -----------------------------------------
-
-    if (
-      lowerSymptoms.includes(
-        "frequent urination"
-      )
-    ) {
-      diabetesScore += 15
-    }
-
-    if (
-      lowerSymptoms.includes(
-        "excessive thirst"
-      )
-    ) {
-      diabetesScore += 15
-    }
-
-    if (
-      lowerSymptoms.includes("fatigue")
-    ) {
-      diabetesScore += 10
-    }
-
-    if (
-      lowerSymptoms.includes("dizziness")
-    ) {
-      heartScore += 10
-    }
-
-    if (
-      lowerSymptoms.includes("vomiting")
-    ) {
-      kidneyScore += 10
-    }
-
-    if (
-      lowerSymptoms.includes(
-        "stomach pain"
-      )
-    ) {
-      liverScore += 10
-    }
-
-    // -----------------------------------------
-    // Clamp scores
-    // -----------------------------------------
-
-    diabetesScore = clamp(
-      diabetesScore
-    )
-
-    heartScore = clamp(
-      heartScore
-    )
-
-    kidneyScore = clamp(
-      kidneyScore
-    )
-
-    liverScore = clamp(
-      liverScore
-    )
-
-    breastCancerScore = clamp(
-      breastCancerScore
-    )
-
-    // -----------------------------------------
-    // Overall score
-    // -----------------------------------------
-
-    const averageRisk =
-      (
-        diabetesScore +
-        heartScore +
-        kidneyScore +
-        liverScore +
-        breastCancerScore
-      ) / 5
-
-    const overallScore = clamp(
-      Math.round(
-        100 - averageRisk
-      )
-    )
-
-    // -----------------------------------------
-    // Summary
-    // -----------------------------------------
-
-    const summary =
-      overallScore >= 75
-        ? "Your overall health risk looks low, but continue healthy habits."
-        : overallScore >= 50
-        ? "Some risk factors need attention. Lifestyle improvement is recommended."
-        : "Multiple risk factors detected. Please consult a healthcare professional."
-
-    // -----------------------------------------
-    // Result data
-    // -----------------------------------------
-
-    const resultData = {
-      overallScore,
-
-      summary,
-
-      riskResults: [
-        {
-          disease: "Diabetes",
-
-          risk: riskLevel(
-            diabetesScore
-          ),
-
-          percentage:
-            diabetesScore,
-
-          description:
-            "Calculated using age, BMI, blood sugar, family history, lifestyle, and symptoms.",
-
-          factors: [
-            "BMI",
-            "Blood sugar",
-            "Family history",
-            "Symptoms",
-          ],
-        },
-
-        {
-          disease:
-            "Heart Disease",
-
-          risk: riskLevel(
-            heartScore
-          ),
-
-          percentage:
-            heartScore,
-
-          description:
-            "Calculated using blood pressure, cholesterol, heart rate, age, smoking, and stress.",
-
-          factors: [
-            "Blood pressure",
-            "Cholesterol",
-            "Heart rate",
-            "Lifestyle",
-          ],
-        },
-
-        {
-          disease:
-            "Kidney Disease",
-
-          risk: riskLevel(
-            kidneyScore
-          ),
-
-          percentage:
-            kidneyScore,
-
-          description:
-            "Calculated using blood pressure, symptoms, and related health risk factors.",
-
-          factors: [
-            "Blood pressure",
-            "Symptoms",
-            "Medical history",
-          ],
-        },
-
-        {
-          disease:
-            "Liver Disorders",
-
-          risk: riskLevel(
-            liverScore
-          ),
-
-          percentage:
-            liverScore,
-
-          description:
-            "Calculated using BMI, alcohol intake, medications, and digestive symptoms.",
-
-          factors: [
-            "BMI",
-            "Alcohol",
-            "Medications",
-            "Symptoms",
-          ],
-        },
-
-        {
-          disease:
-            "Breast Cancer",
-
-          risk: riskLevel(
-            breastCancerScore
-          ),
-
-          percentage:
-            breastCancerScore,
-
-          description:
-            "Calculated using gender, age, family history, BMI, lifestyle, and related risk factors.",
-
-          factors: [
-            "Age",
-            "Family history",
-            "BMI",
-            "Lifestyle",
-          ],
-        },
-      ],
-
-      dietRecommendations: [
-        {
-          title:
-            "Balanced Diet",
-
-          description:
-            "Eat more vegetables, fruits, whole grains, and lean protein.",
-        },
-
-        {
-          title:
-            "Reduce Sugar and Junk Food",
-
-          description:
-            "Avoid excess sugar, fried food, and processed snacks.",
-        },
-
-        {
-          title:
-            "Stay Hydrated",
-
-          description:
-            "Drink enough water daily unless restricted by a doctor.",
-        },
-      ],
-
-      lifestyleRecommendations: [
-        {
-          title:
-            "Daily Walking",
-
-          description:
-            "Walk at least 30 minutes daily for better heart and sugar control.",
-        },
-
-        {
-          title:
-            "Sleep Improvement",
-
-          description:
-            "Try to maintain 7-8 hours of sleep every night.",
-        },
-
-        {
-          title:
-            "Stress Control",
-
-          description:
-            "Practice breathing, meditation, or light exercise to reduce stress.",
-        },
-      ],
-
-      preventiveCare: [
-        {
-          title:
-            "Regular Checkup",
-
-          description:
-            "Check blood pressure, sugar, and cholesterol regularly.",
-        },
-
-        {
-          title:
-            "Doctor Consultation",
-
-          description:
-            "Consult a doctor if symptoms continue or risk is high.",
-        },
-      ],
-
-      disclaimer:
-        "This application does not provide medical diagnosis and should not replace professional medical advice. Please consult a qualified healthcare professional.",
-    }
-
-    // -----------------------------------------
-    // SAVE ASSESSMENT
-    // -----------------------------------------
-
     let savedId = null
     const {
       data: savedRow,
@@ -779,10 +277,10 @@ export async function POST(req: Request) {
       .from("health_assessments")
       .insert({
         user_id: user.id,
-        overall_score: overallScore,
-        summary: summary,
+        overall_score: clinicalResult.overallScore,
+        summary: clinicalResult.summary,
         input_data: data,
-        result_data: resultData,
+        result_data: clinicalResult,
       })
       .select("id")
       .maybeSingle()
@@ -799,7 +297,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({
-      ...resultData,
+      ...clinicalResult,
       id: savedId,
     })
   } catch (error) {

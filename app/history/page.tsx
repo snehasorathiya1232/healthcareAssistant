@@ -180,32 +180,28 @@ export default function HistoryPage() {
     )
   }
 
-  const getRiskLevel = (
-    score: number
-  ) => {
+  const getRiskLevel = (score: number) => {
     if (score >= 70) {
-      return "High"
+      return "Low"
     }
 
     if (score >= 40) {
       return "Medium"
     }
 
-    return "Low"
+    return "High"
   }
 
-  const getRiskStyle = (
-    score: number
-  ) => {
+  const getRiskStyle = (score: number) => {
     if (score >= 70) {
-      return "bg-red-100 text-red-700"
+      return "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300"
     }
 
     if (score >= 40) {
-      return "bg-yellow-100 text-yellow-700"
+      return "bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300"
     }
 
-    return "bg-green-100 text-green-700"
+    return "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"
   }
 
   const formatDate = (

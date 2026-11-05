@@ -5,9 +5,10 @@ import { FormData } from "@/app/(dashboard)/predict/page"
 interface PersonalInfoStepProps {
   formData: FormData
   updateFormData: (updates: Partial<FormData>) => void
+  errors?: Record<string, string>
 }
 
-export function PersonalInfoStep({ formData, updateFormData }: PersonalInfoStepProps) {
+export function PersonalInfoStep({ formData, updateFormData, errors }: PersonalInfoStepProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Age */}
@@ -18,14 +19,20 @@ export function PersonalInfoStep({ formData, updateFormData }: PersonalInfoStepP
         <input
           id="age"
           type="number"
-          min="1"
-          max="120"
-          placeholder="Enter your age"
+          min="10"
+          max="90"
+          placeholder="Enter your age (10-90)"
           value={formData.age}
           onChange={(e) => updateFormData({ age: e.target.value })}
-          className="w-full h-11 px-4 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className={`w-full h-11 px-4 rounded-lg border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
+            errors?.age ? "border-destructive focus:ring-destructive" : "border-input"
+          }`}
         />
-        <p className="text-xs text-muted-foreground">Your age in years</p>
+        {errors?.age ? (
+          <p className="text-xs text-destructive font-medium">{errors.age}</p>
+        ) : (
+          <p className="text-xs text-muted-foreground">Your age in years (10–90)</p>
+        )}
       </div>
 
       {/* Gender */}
@@ -37,14 +44,19 @@ export function PersonalInfoStep({ formData, updateFormData }: PersonalInfoStepP
           id="gender"
           value={formData.gender}
           onChange={(e) => updateFormData({ gender: e.target.value })}
-          className="w-full h-11 px-4 rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className={`w-full h-11 px-4 rounded-lg border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
+            errors?.gender ? "border-destructive focus:ring-destructive" : "border-input"
+          }`}
         >
           <option value="">Select gender</option>
           <option value="male">Male</option>
           <option value="female">Female</option>
-          <option value="other">Other</option>
-          <option value="prefer-not-to-say">Prefer not to say</option>
         </select>
+        {errors?.gender ? (
+          <p className="text-xs text-destructive font-medium">{errors.gender}</p>
+        ) : (
+          <p className="text-xs text-muted-foreground">Biological sex for clinical algorithms</p>
+        )}
       </div>
 
       {/* Height */}
@@ -57,12 +69,18 @@ export function PersonalInfoStep({ formData, updateFormData }: PersonalInfoStepP
           type="number"
           min="50"
           max="250"
-          placeholder="Enter height in cm"
+          placeholder="Enter height in cm (50-250)"
           value={formData.height}
           onChange={(e) => updateFormData({ height: e.target.value })}
-          className="w-full h-11 px-4 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className={`w-full h-11 px-4 rounded-lg border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
+            errors?.height ? "border-destructive focus:ring-destructive" : "border-input"
+          }`}
         />
-        <p className="text-xs text-muted-foreground">Example: 170 cm</p>
+        {errors?.height ? (
+          <p className="text-xs text-destructive font-medium">{errors.height}</p>
+        ) : (
+          <p className="text-xs text-muted-foreground">Example: 170 cm</p>
+        )}
       </div>
 
       {/* Weight */}
@@ -73,18 +91,24 @@ export function PersonalInfoStep({ formData, updateFormData }: PersonalInfoStepP
         <input
           id="weight"
           type="number"
-          min="20"
+          min="10"
           max="300"
-          placeholder="Enter weight in kg"
+          placeholder="Enter weight in kg (10-300)"
           value={formData.weight}
           onChange={(e) => updateFormData({ weight: e.target.value })}
-          className="w-full h-11 px-4 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className={`w-full h-11 px-4 rounded-lg border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
+            errors?.weight ? "border-destructive focus:ring-destructive" : "border-input"
+          }`}
         />
-        <p className="text-xs text-muted-foreground">Example: 70 kg</p>
+        {errors?.weight ? (
+          <p className="text-xs text-destructive font-medium">{errors.weight}</p>
+        ) : (
+          <p className="text-xs text-muted-foreground">Example: 70 kg</p>
+        )}
       </div>
 
       {/* BMI Calculator Display */}
-      {formData.height && formData.weight && (
+      {formData.height && formData.weight && Number(formData.height) > 0 && Number(formData.weight) > 0 && (
         <div className="md:col-span-2 p-4 rounded-lg bg-primary/5 border border-primary/20">
           <div className="flex items-center justify-between">
             <div>

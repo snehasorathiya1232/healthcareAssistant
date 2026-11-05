@@ -248,7 +248,7 @@ export default function ResultsContent() {
 
   const customRiskFactors = riskResults.map((r: any) => ({
     name: r.disease,
-    value: Math.max(0, 100 - Number(r.percentage || 0)),
+    value: Math.max(0, 100 - Number(r.percentage ?? 0)),
     status: (r.risk === "Low" ? "good" : r.risk === "Medium" ? "warning" : "danger") as "good" | "warning" | "danger",
   }))
 
@@ -393,6 +393,56 @@ export default function ResultsContent() {
         </CardContent>
 
       </Card>
+
+      {/* SAFETY WARNINGS */}
+      {Array.isArray(result.safetyWarnings) && result.safetyWarnings.length > 0 && (
+        <div className="space-y-3">
+          {result.safetyWarnings.map((warning: any, idx: number) => {
+            const isCritical = warning.severity === "critical"
+            const isWarning = warning.severity === "warning"
+            return (
+              <Card
+                key={idx}
+                className={
+                  isCritical
+                    ? "border-red-500/30 bg-red-500/10"
+                    : isWarning
+                    ? "border-amber-500/30 bg-amber-500/10"
+                    : "border-blue-500/30 bg-blue-500/10"
+                }
+              >
+                <CardContent className="p-4 flex items-start gap-3">
+                  <AlertTriangle
+                    className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
+                      isCritical
+                        ? "text-red-600 dark:text-red-400"
+                        : isWarning
+                        ? "text-amber-600 dark:text-amber-400"
+                        : "text-blue-600 dark:text-blue-400"
+                    }`}
+                  />
+                  <div>
+                    <h3
+                      className={`text-sm font-semibold ${
+                        isCritical
+                          ? "text-red-700 dark:text-red-300"
+                          : isWarning
+                          ? "text-amber-700 dark:text-amber-300"
+                          : "text-blue-700 dark:text-blue-300"
+                      }`}
+                    >
+                      {warning.title}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      {warning.message}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      )}
 
       {/* DISEASE RISK */}
 

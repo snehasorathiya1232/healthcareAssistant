@@ -127,6 +127,15 @@ export default function DashboardPage() {
 
   const riskResults = parsedResultData?.riskResults || []
 
+  // Check if female to show breast cancer card
+  const userGender =
+    parsedResultData?.gender?.toLowerCase() ||
+    latestAssessment?.result_data?.gender?.toLowerCase() ||
+    ""
+  const shouldShowBreastCancer =
+    userGender === "female" ||
+    (!userGender && riskResults.some((r: any) => r.disease?.toLowerCase().includes("cancer")))
+
   // Helper to find specific disease risk
   const getDiseaseRisk = (diseaseName: string) => {
     const item = riskResults.find((r: any) =>
@@ -134,7 +143,7 @@ export default function DashboardPage() {
     )
     return {
       risk: (item?.risk || "Low") as "Low" | "Medium" | "High",
-      percentage: Number(item?.percentage || 15),
+      percentage: Number(item?.percentage ?? 15),
     }
   }
 
@@ -280,13 +289,15 @@ export default function DashboardPage() {
                 trend="down"
               />
 
-              <RiskCard
-                label="Breast Cancer"
-                risk={getDiseaseRisk("Cancer").risk}
-                percentage={getDiseaseRisk("Cancer").percentage}
-                icon={Activity}
-                trend="down"
-              />
+              {shouldShowBreastCancer && (
+                <RiskCard
+                  label="Breast Cancer"
+                  risk={getDiseaseRisk("Cancer").risk}
+                  percentage={getDiseaseRisk("Cancer").percentage}
+                  icon={Activity}
+                  trend="down"
+                />
+              )}
 
               <Card className="hover:shadow-md transition-shadow border-dashed flex flex-col justify-center items-center p-4 text-center">
                 <Sparkles className="h-8 w-8 text-primary mb-2 opacity-80" />

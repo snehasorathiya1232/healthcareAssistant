@@ -185,7 +185,7 @@ export default function AlertsPage() {
     })
 
     // Score-based tip
-    if (score >= 70) {
+    if (score < 40) {
       tips.unshift({
         title: "High Risk Alert",
         description:
@@ -193,7 +193,7 @@ export default function AlertsPage() {
         icon: AlertTriangle,
         type: "warning",
       })
-    } else if (score >= 40) {
+    } else if (score < 70) {
       tips.unshift({
         title: "Health Risk Needs Attention",
         description:

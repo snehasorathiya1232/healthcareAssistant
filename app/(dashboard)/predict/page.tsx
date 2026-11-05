@@ -3,6 +3,11 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
+import {
+  validateStep1,
+  validateStep2,
+  validateHealthAssessment,
+} from "@/lib/validations/health-assessment"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -15,6 +20,7 @@ import {
   ArrowLeft,
   Check,
   Loader2,
+  AlertCircle,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -87,28 +93,50 @@ export default function PredictPage() {
   const router = useRouter()
 
   const [currentStep, setCurrentStep] = useState(1)
-  const [formData, setFormData] =
-    useState<FormData>(initialFormData)
-
+  const [formData, setFormData] = useState<FormData>(initialFormData)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState("")
 
-  const updateFormData = (
-    updates: Partial<FormData>
-  ) => {
+  const updateFormData = (updates: Partial<FormData>) => {
     setFormData((prev) => ({
       ...prev,
       ...updates,
     }))
+    setFieldErrors((prev) => {
+      const next = { ...prev }
+      Object.keys(updates).forEach((k) => delete next[k])
+      return next
+    })
+    setSubmitError("")
   }
 
   const handleNext = () => {
+    if (currentStep === 1) {
+      const errors = validateStep1(formData)
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors)
+        setSubmitError("Please fill in all required personal information fields correctly.")
+        return
+      }
+    } else if (currentStep === 2) {
+      const errors = validateStep2(formData)
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors)
+        setSubmitError("Please enter valid vital measurements before proceeding.")
+        return
+      }
+    }
+
+    setFieldErrors({})
+    setSubmitError("")
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1)
     }
   }
 
   const handleBack = () => {
+    setSubmitError("")
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1)
     }
@@ -119,53 +147,61 @@ export default function PredictPage() {
       setIsSubmitting(true)
       setSubmitError("")
 
+      // Validate entire assessment client-side before calling API
+      const validation = validateHealthAssessment(formData)
+      if (!validation.isValid) {
+        setFieldErrors(validation.errors)
+        // If errors belong to step 1 or step 2, navigate there
+        const step1Keys = ["age", "gender", "height", "weight"]
+        const hasStep1Err = step1Keys.some((k) => validation.errors[k])
+        if (hasStep1Err) {
+          setCurrentStep(1)
+          setSubmitError("Please correct the invalid personal info fields.")
+        } else {
+          setCurrentStep(2)
+          setSubmitError("Please correct the invalid vital measurements.")
+        }
+        setIsSubmitting(false)
+        return
+      }
+
       // Get logged-in user's session
       const {
         data: sessionData,
         error: sessionError,
       } = await supabase.auth.getSession()
 
-      if (
-        sessionError ||
-        !sessionData.session
-      ) {
+      if (sessionError || !sessionData.session) {
         router.push("/login")
         return
       }
 
-      const accessToken =
-        sessionData.session.access_token
+      const accessToken = sessionData.session.access_token
 
       // Send assessment + authentication token
-      const res = await fetch(
-        "/api/health-assessment",
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-
-          body: JSON.stringify(formData),
-        }
-      )
+      const res = await fetch("/api/health-assessment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(formData),
+      })
 
       const data = await res.json()
 
       if (!res.ok) {
+        if (data.errors) {
+          setFieldErrors(data.errors)
+        }
         setSubmitError(
-          data.error ||
-            "Assessment failed. Please try again."
+          data.error || "Assessment failed. Please check the form and try again."
         )
         return
       }
 
       // Save result for Results page
-      localStorage.setItem(
-        "healthAssessmentResult",
-        JSON.stringify(data)
-      )
+      localStorage.setItem("healthAssessmentResult", JSON.stringify(data))
 
       // Go to results
       if (data.id) {
@@ -174,14 +210,8 @@ export default function PredictPage() {
         router.push("/results")
       }
     } catch (error) {
-      console.error(
-        "Assessment error:",
-        error
-      )
-
-      setSubmitError(
-        "Something went wrong. Please try again."
-      )
+      console.error("Assessment error:", error)
+      setSubmitError("Something went wrong while submitting. Please try again.")
     } finally {
       setIsSubmitting(false)
     }
@@ -194,6 +224,7 @@ export default function PredictPage() {
           <PersonalInfoStep
             formData={formData}
             updateFormData={updateFormData}
+            errors={fieldErrors}
           />
         )
 
@@ -202,6 +233,7 @@ export default function PredictPage() {
           <VitalsStep
             formData={formData}
             updateFormData={updateFormData}
+            errors={fieldErrors}
           />
         )
 
@@ -354,6 +386,16 @@ export default function PredictPage() {
           <div className="min-h-[400px]">
             {renderStep()}
           </div>
+
+          {submitError && (
+            <div className="mt-4 p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive flex items-start gap-3 animate-in fade-in">
+              <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-sm">Attention Needed</p>
+                <p className="text-xs mt-0.5 leading-relaxed">{submitError}</p>
+              </div>
+            </div>
+          )}
 
           {/* Navigation Buttons */}
           <div className="flex items-center justify-between pt-6 border-t border-border mt-6">
