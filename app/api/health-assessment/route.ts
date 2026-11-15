@@ -52,15 +52,19 @@ export async function POST(req: Request) {
           }
         )
 
-        const {
-          data: userData,
-          error: userError,
-        } = await supabase.auth.getUser(token)
+        try {
+          const {
+            data: userData,
+            error: userError,
+          } = await supabase.auth.getUser(token)
 
-        if (!userError && userData?.user) {
-          user = userData.user
-        } else if (userError) {
-          console.warn("User auth session lookup failed, proceeding as demo:", userError.message)
+          if (!userError && userData?.user) {
+            user = userData.user
+          } else if (userError) {
+            console.warn("User auth session lookup failed, proceeding as demo:", userError.message)
+          }
+        } catch (authErr: any) {
+          console.warn("Auth token verification error, proceeding safely:", authErr?.message)
         }
       }
     }

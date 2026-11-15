@@ -1,4 +1,4 @@
-﻿import Link from "next/link"
+import Link from "next/link"
 import { Activity } from "lucide-react"
 
 const footerLinks = {
@@ -6,7 +6,7 @@ const footerLinks = {
     { label: "Features", href: "#features" },
     { label: "How It Works", href: "#how-it-works" },
     { label: "Disease Predictions", href: "#diseases" },
-    { label: "Start Assessment", href: "/signup" }
+    { label: "Start Free Assessment", href: "/predict" }
   ],
   account: [
     { label: "Create Account", href: "/signup" },
@@ -15,10 +15,9 @@ const footerLinks = {
     { label: "Assessment History", href: "/history" }
   ],
   info: [
-    { label: "Health Alerts & Tips", href: "/alerts" },
+    { label: "Health Alerts & Reminders", href: "/alerts" },
     { label: "Risk Results", href: "/results" },
-    { label: "Privacy Notice", href: "#" },
-    { label: "Disclaimer", href: "#" }
+    { label: "Medical Disclaimer", href: "/results" }
   ]
 }
 

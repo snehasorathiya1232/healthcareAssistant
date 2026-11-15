@@ -16,7 +16,6 @@ export default function LandingPage() {
         <FeaturesSection />
         <HowItWorksSection />
         <DiseaseSection />
-        {/*<TestimonialsSection /> */}
         <CTASection />
       </main>
       <Footer />

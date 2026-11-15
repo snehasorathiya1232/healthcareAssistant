@@ -14,10 +14,10 @@ const defaultData: RiskFactorItem[] = [
 
 const getBarColor = (status: string) => {
   switch (status) {
-    case "good": return "oklch(0.65 0.2 145)"
-    case "warning": return "oklch(0.75 0.18 85)"
-    case "danger": return "oklch(0.55 0.22 25)"
-    default: return "oklch(0.55 0.15 200)"
+    case "good": return "#16a34a"
+    case "warning": return "#eab308"
+    case "danger": return "#dc2626"
+    default: return "#0d9488"
   }
 }
 

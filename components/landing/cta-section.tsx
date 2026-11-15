@@ -43,7 +43,7 @@ export function CTASection() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="h-12 px-8 text-base border-primary-foreground/20 text-black hover:bg-primary-foreground/10" asChild>
+            <Button size="lg" variant="outline" className="h-12 px-8 text-base border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10" asChild>
               <Link href="/login">
                 Sign In
               </Link>

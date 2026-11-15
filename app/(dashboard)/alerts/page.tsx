@@ -29,6 +29,9 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
+import { ReminderEditor } from "@/components/alerts/reminder-editor"
+import { WeatherHealthWarnings } from "@/components/alerts/weather-health-warnings"
+
 type Assessment = {
   id: string
   overall_score: number
@@ -272,52 +275,7 @@ export default function AlertsPage() {
     )
   }
 
-  // --------------------------------
-  // No assessment
-  // --------------------------------
-
-  if (!assessment) {
-    return (
-      <div className="max-w-4xl mx-auto">
-
-        <Card>
-
-          <CardContent className="p-10 text-center">
-
-            <Bell className="h-12 w-12 mx-auto mb-4 text-primary" />
-
-            <h1 className="text-2xl font-bold mb-2">
-              Health Alerts & Tips
-            </h1>
-
-            <p className="text-muted-foreground mb-5">
-              Complete a health assessment first to
-              receive personalized health guidance.
-            </p>
-
-            <Button asChild>
-
-              <Link href="/predict">
-
-                <ClipboardPlus className="h-4 w-4 mr-2" />
-
-                Start Assessment
-
-              </Link>
-
-            </Button>
-
-          </CardContent>
-
-        </Card>
-
-      </div>
-    )
-  }
-
-  const tips = getHealthTips(
-    assessment.overall_score
-  )
+  const tips = assessment ? getHealthTips(assessment.overall_score) : []
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -327,150 +285,135 @@ export default function AlertsPage() {
       {/* -------------------------------- */}
 
       <div>
-
         <div className="flex items-center gap-3">
-
           <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center">
-
             <Bell className="h-6 w-6 text-primary" />
-
           </div>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">
+              Health Alerts & Reminders
+            </h1>
+            <p className="text-muted-foreground">
+              Customize daily health schedules, medication timings, and clinical guidance
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* -------------------------------- */}
+      {/* Reminder Editor Component */}
+      {/* -------------------------------- */}
+
+      <ReminderEditor />
+
+      {/* -------------------------------- */}
+      {/* Weather & Seasonal Health Warnings */}
+      {/* -------------------------------- */}
+
+      <WeatherHealthWarnings
+        assessmentScore={assessment?.overall_score}
+        userRiskSummary={assessment?.summary}
+      />
+
+      {/* -------------------------------- */}
+      {/* Latest Score & Clinical Tips */}
+      {/* -------------------------------- */}
+
+      {assessment ? (
+        <>
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+                <div className="w-20 h-20 rounded-full border-4 border-primary/30 flex items-center justify-center flex-shrink-0">
+                  <span className="text-2xl font-bold text-primary">
+                    {assessment.overall_score}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Latest Health Score
+                  </p>
+                  <h2 className="text-xl font-bold mt-1">
+                    Your Personalized Clinical Guidance
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {assessment.summary ||
+                      "Guidance based on your latest health assessment."}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           <div>
-
-            <h1 className="text-2xl md:text-3xl font-bold">
-              Health Alerts & Tips
-            </h1>
-
-            <p className="text-muted-foreground">
-              Helpful guidance based on your latest assessment
-            </p>
-
-          </div>
-
-        </div>
-
-      </div>
-
-      {/* -------------------------------- */}
-      {/* Latest Score */}
-      {/* -------------------------------- */}
-
-      <Card className="border-primary/20 bg-primary/5">
-
-        <CardContent className="p-6">
-
-          <div className="flex flex-col sm:flex-row sm:items-center gap-5">
-
-            <div className="w-20 h-20 rounded-full border-4 border-primary/30 flex items-center justify-center flex-shrink-0">
-
-              <span className="text-2xl font-bold text-primary">
-                {assessment.overall_score}
-              </span>
-
-            </div>
-
-            <div>
-
-              <p className="text-sm text-muted-foreground">
-                Latest Health Score
-              </p>
-
-              <h2 className="text-xl font-bold mt-1">
-                Your Personalized Guidance
-              </h2>
-
-              <p className="text-sm text-muted-foreground mt-2">
-                {assessment.summary ||
-                  "Guidance based on your latest health assessment."}
-              </p>
-
-            </div>
-
-          </div>
-
-        </CardContent>
-
-      </Card>
-
-      {/* -------------------------------- */}
-      {/* Tips */}
-      {/* -------------------------------- */}
-
-      <div>
-
-        <h2 className="text-xl font-bold mb-4">
-          Your Health Tips
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
-          {tips.map(
-            (tip, index) => {
-
-              const Icon =
-                tip.icon
-
-              const isWarning =
-                tip.type ===
-                "warning"
-
-              return (
-                <Card
-                  key={index}
-                  className={
-                    isWarning
-                      ? "border-yellow-300 bg-yellow-50/50"
-                      : ""
-                  }
-                >
-
-                  <CardContent className="p-6">
-
-                    <div className="flex items-start gap-4">
-
-                      <div
-                        className={
-                          isWarning
-                            ? "h-10 w-10 rounded-lg bg-yellow-100 flex items-center justify-center flex-shrink-0"
-                            : "h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0"
-                        }
-                      >
-
-                        <Icon
+            <h2 className="text-xl font-bold mb-4">
+              AI Personalized Tips
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {tips.map((tip, index) => {
+                const Icon = tip.icon
+                const isWarning = tip.type === "warning"
+                return (
+                  <Card
+                    key={index}
+                    className={
+                      isWarning
+                        ? "border-yellow-300 bg-yellow-50/50 dark:bg-yellow-950/20"
+                        : ""
+                    }
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        <div
                           className={
                             isWarning
-                              ? "h-5 w-5 text-yellow-600"
-                              : "h-5 w-5 text-primary"
+                              ? "h-10 w-10 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center flex-shrink-0"
+                              : "h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0"
                           }
-                        />
-
+                        >
+                          <Icon
+                            className={
+                              isWarning
+                                ? "h-5 w-5 text-yellow-600 dark:text-yellow-400"
+                                : "h-5 w-5 text-primary"
+                            }
+                          />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-lg">
+                            {tip.title}
+                          </h3>
+                          <p className="text-sm text-muted-foreground mt-2 leading-6">
+                            {tip.description}
+                          </p>
+                        </div>
                       </div>
-
-                      <div>
-
-                        <h3 className="font-semibold text-lg">
-                          {tip.title}
-                        </h3>
-
-                        <p className="text-sm text-muted-foreground mt-2 leading-6">
-                          {tip.description}
-                        </p>
-
-                      </div>
-
-                    </div>
-
-                  </CardContent>
-
-                </Card>
-              )
-            }
-          )}
-
-        </div>
-
-      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          </div>
+        </>
+      ) : (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="p-8 text-center">
+            <ClipboardPlus className="h-10 w-10 mx-auto mb-3 text-primary" />
+            <h2 className="text-xl font-bold mb-1">
+              Unlock Personalized Health Guidance
+            </h2>
+            <p className="text-sm text-muted-foreground mb-5 max-w-md mx-auto">
+              Complete a health assessment to receive tailored disease risk alerts and personalized lifestyle advice alongside your reminders.
+            </p>
+            <Button asChild>
+              <Link href="/predict">
+                <ClipboardPlus className="h-4 w-4 mr-2" />
+                Start Health Assessment
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* -------------------------------- */}
       {/* Important Reminder */}

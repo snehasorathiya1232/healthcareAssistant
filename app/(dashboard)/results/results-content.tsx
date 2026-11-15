@@ -709,8 +709,8 @@ export default function ResultsContent() {
 
       </Card>
 
-      {/* DEMO USER ACCOUNT CREATION CALLOUT */}
-      {(isDemoUser || result?.isDemo) && (
+      {/* DEMO USER ACCOUNT CREATION CALLOUT: ONLY FOR UNREGISTERED GUEST USERS */}
+      {isDemoUser && (
         <Card className="border-primary/40 bg-gradient-to-r from-primary/10 via-primary/5 to-background shadow-md">
           <CardHeader className="text-center pb-2">
             <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 text-primary">

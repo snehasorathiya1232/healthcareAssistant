@@ -56,7 +56,7 @@ function getAIHealthResponse(query: string): string {
   }
 
   if (q.includes("headache") || q.includes("pain") || q.includes("chest") || q.includes("emergency")) {
-    return "If you are experiencing severe sudden chest pain, breathing difficulty, dizziness, or loss of consciousness, please seek immediate emergency medical care. Antigravity Health Assistant provides educational insights and does not substitute for emergency medical care."
+    return "If you are experiencing severe sudden chest pain, breathing difficulty, dizziness, or loss of consciousness, please seek immediate emergency medical care. HealthPredict AI Assistant provides educational insights and does not substitute for emergency medical care."
   }
 
   return "Thank you for asking! Maintaining health comes down to consistency: balanced nutrition rich in fresh plants and lean protein, 150 minutes of weekly movement, restful sleep, and regular preventative screenings. You can also run our full Health Assessment on the predict page to get tailored disease predictions!"

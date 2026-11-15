@@ -25,11 +25,11 @@ export function ActivityChart() {
             <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="oklch(0.55 0.15 200)" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="oklch(0.55 0.15 200)" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#0d9488" stopOpacity={0.35} />
+                  <stop offset="95%" stopColor="#0d9488" stopOpacity={0.0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              <CartesianGrid strokeDasharray="3 3" className="stroke-muted/40" />
               <XAxis 
                 dataKey="month" 
                 axisLine={false}
@@ -46,19 +46,19 @@ export function ActivityChart() {
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: 'var(--color-card)',
-                  border: '1px solid var(--color-border)',
+                  backgroundColor: 'var(--color-card, #ffffff)',
+                  border: '1px solid var(--color-border, #e5e7eb)',
                   borderRadius: '8px',
                   boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                 }}
-                labelStyle={{ color: 'var(--color-foreground)', fontWeight: 600 }}
-                itemStyle={{ color: 'var(--color-muted-foreground)' }}
+                labelStyle={{ color: 'var(--color-foreground, #111827)', fontWeight: 600 }}
+                itemStyle={{ color: 'var(--color-muted-foreground, #6b7280)' }}
               />
               <Area
                 type="monotone"
                 dataKey="score"
-                stroke="oklch(0.55 0.15 200)"
-                strokeWidth={2}
+                stroke="#0d9488"
+                strokeWidth={2.5}
                 fillOpacity={1}
                 fill="url(#colorScore)"
                 name="Health Score"
