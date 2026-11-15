@@ -9,214 +9,98 @@ import {
   ShieldAlert,
   AlertTriangle,
   CheckCircle2,
-  Calendar,
-  Sparkles,
-  Thermometer,
-  Heart,
   Droplets,
+  Heart,
   Activity,
   MessageCircle,
 } from "lucide-react"
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 
-type SeasonKey = "winter" | "summer" | "monsoon" | "smog"
+export type SeasonKey = "winter" | "smog" | "summer" | "monsoon"
 
-interface SeasonAdvisory {
+interface SimpleAdvisory {
   id: SeasonKey
-  title: string
-  subtitle: string
-  temperatureRange: string
+  name: string
+  temp: string
   icon: any
   badgeClass: string
-  headerBg: string
-  primaryVulnerability: string
-  clinicalMechanism: string
-  vulnerableGroups: string[]
-  recommendedActions: {
+  colorClass: string
+  bgGradient: string
+  keyRisk: string
+  shortAdvice: string
+  tips: {
+    id: string
     title: string
-    detail: string
-    category: "cardio" | "hydration" | "activity" | "general"
+    icon: any
   }[]
 }
 
-const seasonalAdvisories: Record<SeasonKey, SeasonAdvisory> = {
+const advisories: Record<SeasonKey, SimpleAdvisory> = {
   winter: {
     id: "winter",
-    title: "Cold Wave & Winter Advisory",
-    subtitle: "Vasoconstriction & Morning Blood Pressure Surge Protection",
-    temperatureRange: "10°C – 22°C (Cold to Frigid)",
+    name: "Winter Cold",
+    temp: "14°C • Cold",
     icon: Snowflake,
-    badgeClass: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800",
-    headerBg: "from-blue-500/10 via-cyan-500/5 to-transparent",
-    primaryVulnerability: "Elevated Myocardial Infarction & Hypertensive Stroke Risk",
-    clinicalMechanism:
-      "Cold air exposure triggers sympathetic nervous system activation and acute cutaneous vasoconstriction. This raises systemic vascular resistance, spiking systolic blood pressure by 10–20 mmHg and increasing cardiac workload.",
-    vulnerableGroups: [
-      "Hypertensive Patients (Systolic >= 130 mmHg)",
-      "Cardiovascular Disease / History of CAD",
-      "Older Adults (Age >= 60)",
-      "Smokers and Sedentary Individuals",
-    ],
-    recommendedActions: [
-      {
-        title: "Measure Morning BP 30 Mins After Waking",
-        detail:
-          "Avoid checking BP immediately upon rising. Sit quietly in a warm room for 15 minutes before taking a resting reading.",
-        category: "cardio",
-      },
-      {
-        title: "Avoid Abrupt Early Morning Cold Exposure",
-        detail:
-          "Perform 5–10 minutes of gentle indoor mobility exercises before stepping outside. Wear multiple warm layers covering head, neck, and chest.",
-        category: "activity",
-      },
-      {
-        title: "Maintain Consistent Winter Hydration",
-        detail:
-          "Thirst sensation decreases in cold weather, yet indoor heaters increase insensible water loss. Drink at least 2 liters of warm water daily.",
-        category: "hydration",
-      },
-      {
-        title: "Never Skip Antihypertensive Medications",
-        detail:
-          "Dosages prescribed in summer may need clinical physician review if cold-weather morning readings consistently exceed 140/90 mmHg.",
-        category: "general",
-      },
-    ],
-  },
-  summer: {
-    id: "summer",
-    title: "Extreme Heat & Heatwave Advisory",
-    subtitle: "Dehydration, Renal Strain & Hemoconcentration Management",
-    temperatureRange: "35°C – 45°C+ (Extreme Heat)",
-    icon: Sun,
-    badgeClass: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800",
-    headerBg: "from-amber-500/10 via-orange-500/5 to-transparent",
-    primaryVulnerability: "Acute Kidney Injury (AKI), Electrolyte Derangement & Orthostatic Hypotension",
-    clinicalMechanism:
-      "High ambient temperatures provoke profuse diaphoresis (sweating). Uncompensated fluid loss contracts intravascular volume, concentrating serum glucose and elevating hematocrit, which places direct filtration stress on the kidneys.",
-    vulnerableGroups: [
-      "Diabetic Patients (Prone to Hyperglycemic Dehydration)",
-      "Chronic Kidney Disease (CKD) Patients",
-      "Patients on Diuretics or ACE Inhibitors / ARBs",
-      "Outdoor Workers & Athletes",
-    ],
-    recommendedActions: [
-      {
-        title: "Target 2.5L to 3.5L of Water Daily",
-        detail:
-          "Drink water in steady 250ml increments every 60–90 minutes. Incorporate unsweetened lemon water or oral rehydration fluids if sweating profusely.",
-        category: "hydration",
-      },
-      {
-        title: "Protect Temperature-Sensitive Medications",
-        detail:
-          "Store insulin, glucometer test strips, and thyroid tablets strictly below 30°C in a cool, shaded environment. Do not leave in parked vehicles.",
-        category: "general",
-      },
-      {
-        title: "Shift Aerobic Workouts to Off-Peak Hours",
-        detail:
-          "Schedule all outdoor walking or exercise before 7:30 AM or after 6:30 PM to avoid peak solar radiation and heat exhaustion.",
-        category: "activity",
-      },
-      {
-        title: "Monitor for Postural Lightheadedness",
-        detail:
-          "Vasodilation from heat can cause sudden blood pressure drops upon standing. Stand up gradually from sitting or lying down.",
-        category: "cardio",
-      },
+    badgeClass: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200",
+    colorClass: "text-blue-500",
+    bgGradient: "from-blue-500/10 via-cyan-500/5 to-transparent",
+    keyRisk: "Cold air causes morning blood pressure spikes",
+    shortAdvice: "Protect your heart by keeping warm and checking resting blood pressure.",
+    tips: [
+      { id: "w1", title: "Wear warm layers & cover your neck before stepping outside", icon: ShieldAlert },
+      { id: "w2", title: "Check blood pressure 30 minutes after waking, not right away", icon: Heart },
+      { id: "w3", title: "Drink 2+ liters of warm water to prevent winter dehydration", icon: Droplets },
     ],
   },
   smog: {
     id: "smog",
-    title: "High AQI & Smog Air Quality Alert",
-    subtitle: "PM2.5 Arterial Inflammation & Cardiorespiratory Defense",
-    temperatureRange: "AQI 200 – 450+ (Unhealthy to Hazardous)",
+    name: "Smog / AQI",
+    temp: "AQI 260 • Poor",
     icon: Wind,
-    badgeClass: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800",
-    headerBg: "from-rose-500/10 via-red-500/5 to-transparent",
-    primaryVulnerability: "Vascular Endothelial Dysfunction & Acute Asthmatic / Cardiac Distress",
-    clinicalMechanism:
-      "Fine particulate matter (PM2.5) penetrates deep into pulmonary alveoli and enters systemic circulation. This triggers chronic vascular endothelial inflammation, oxidative stress, and accelerated coronary plaque vulnerability.",
-    vulnerableGroups: [
-      "Individuals with Coronary Artery Disease (CAD)",
-      "Asthma, Bronchitis & COPD Patients",
-      "Active Smokers and Secondhand Smoke Exposures",
-      "Elderly and Pediatric Populations",
+    badgeClass: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-200",
+    colorClass: "text-rose-500",
+    bgGradient: "from-rose-500/10 via-orange-500/5 to-transparent",
+    keyRisk: "Fine dust particles strain heart and lungs",
+    shortAdvice: "Limit outdoor exertion and filter indoor air during peak smog hours.",
+    tips: [
+      { id: "s1", title: "Wear an N95 mask during morning and evening rush hours", icon: ShieldAlert },
+      { id: "s2", title: "Exercise indoors instead of jogging outdoors in smog", icon: Activity },
+      { id: "s3", title: "Keep bedroom windows closed and run air filtration if available", icon: Wind },
     ],
-    recommendedActions: [
-      {
-        title: "Wear N95 / KF94 Masks When Outdoors",
-        detail:
-          "Standard cloth masks do not filter sub-micron PM2.5 particulates. Use properly sealed N95 respirators during peak commuting hours.",
-        category: "general",
-      },
-      {
-        title: "Shift High-Intensity Cardio Indoors",
-        detail:
-          "Heavy aerobic respiration outdoors increases particulate deposition tenfold into lung tissue. Substitute outdoor runs with indoor yoga or bodyweight circuits.",
-        category: "activity",
-      },
-      {
-        title: "Run HEPA Air Filtration in Sleeping Quarters",
-        detail:
-          "Keep windows sealed during night and early morning temperature inversions when particulate matter is trapped near ground level.",
-        category: "general",
-      },
-      {
-        title: "Increase Dietary Antioxidant Intake",
-        detail:
-          "Boost consumption of vitamin C (citrus fruits, bell peppers), vitamin E (nuts, seeds), and omega-3 fatty acids to help counteract particulate-induced oxidative stress.",
-        category: "cardio",
-      },
+  },
+  summer: {
+    id: "summer",
+    name: "Summer Heat",
+    temp: "38°C • Hot",
+    icon: Sun,
+    badgeClass: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200",
+    colorClass: "text-amber-500",
+    bgGradient: "from-amber-500/10 via-yellow-500/5 to-transparent",
+    keyRisk: "Extreme sweating risks dehydration & kidney strain",
+    shortAdvice: "Maintain high fluid intake and exercise only during cooler hours.",
+    tips: [
+      { id: "h1", title: "Drink 2.5L – 3.5L of water in steady intervals throughout the day", icon: Droplets },
+      { id: "h2", title: "Walk or exercise before 7:30 AM or after 6:30 PM", icon: Activity },
+      { id: "h3", title: "Store medications, insulin & test strips in a cool shaded spot", icon: Heart },
     ],
   },
   monsoon: {
     id: "monsoon",
-    title: "Monsoon & High Humidity Advisory",
-    subtitle: "Waterborne Pathogen, Liver Defense & Diabetic Foot Safety",
-    temperatureRange: "24°C – 32°C (Relative Humidity > 85%)",
+    name: "Monsoon",
+    temp: "28°C • Humid",
     icon: CloudRain,
-    badgeClass: "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-200 dark:border-teal-800",
-    headerBg: "from-teal-500/10 via-emerald-500/5 to-transparent",
-    primaryVulnerability: "Gastrointestinal Infections, Liver Stress & Fungal Skin Complications",
-    clinicalMechanism:
-      "Sustained humidity promotes rapid bacterial and fungal proliferation on food, water reservoirs, and damp skin folds. Gastrointestinal infections cause acute dehydration and severe glucose instability.",
-    vulnerableGroups: [
-      "Diabetic Individuals with Neuropathy",
-      "Patients with Pre-existing Liver Disorders",
-      "Individuals with Sensitive Gastrointestinal Tracts",
-      "Sedentary Workers Lacking Indoor Exercise Alternatives",
-    ],
-    recommendedActions: [
-      {
-        title: "Strictly Drink Boiled or Certified Filtered Water",
-        detail:
-          "Avoid street ice, raw roadside salads, and pre-cut fruits. Waterborne bacterial gastroenteritis carries high metabolic shock risks.",
-        category: "hydration",
-      },
-      {
-        title: "Daily Diabetic Foot Inspection & Antifungal Care",
-        detail:
-          "Check between toes for maceration, fungal infections, or painless micro-ulcers. Keep feet dry and change damp socks immediately.",
-        category: "general",
-      },
-      {
-        title: "Indoor Exercise Routine (150 min/week)",
-        detail:
-          "Rainy weather often halts outdoor walking routines. Use indoor stair climbing, stationary cycling, or pacing to maintain daily glycemic regulation.",
-        category: "activity",
-      },
-      {
-        title: "Monitor Electrolytes During Diarrheal Episodes",
-        detail:
-          "If fever or gastrointestinal disturbance occurs, use oral rehydration salts (ORS) promptly and consult a healthcare provider.",
-        category: "general",
-      },
+    badgeClass: "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-200",
+    colorClass: "text-teal-500",
+    bgGradient: "from-teal-500/10 via-emerald-500/5 to-transparent",
+    keyRisk: "High humidity raises waterborne infection & fungal risk",
+    shortAdvice: "Drink only boiled water and inspect feet daily for minor cuts.",
+    tips: [
+      { id: "m1", title: "Drink only boiled/filtered water; avoid raw street food", icon: Droplets },
+      { id: "m2", title: "Keep feet completely dry and clean; inspect daily if diabetic", icon: ShieldAlert },
+      { id: "m3", title: "Do 20 mins of indoor marching/stretching to regulate blood sugar", icon: Activity },
     ],
   },
 }
@@ -226,84 +110,67 @@ interface WeatherHealthWarningsProps {
   userRiskSummary?: string | null
 }
 
-export function WeatherHealthWarnings({
-  assessmentScore,
-  userRiskSummary,
-}: WeatherHealthWarningsProps) {
-  // Determine current season automatically based on calendar month
-  const getCurrentDefaultSeason = (): SeasonKey => {
-    const month = new Date().getMonth() // 0 = Jan, 11 = Dec
-    if (month === 10 || month === 11 || month === 0 || month === 1) {
-      // Nov, Dec, Jan, Feb -> Winter / Smog Season
-      return month === 10 ? "smog" : "winter"
-    } else if (month >= 2 && month <= 5) {
-      // Mar, Apr, May, Jun -> Summer Heatwave
-      return "summer"
-    } else {
-      // Jul, Aug, Sep, Oct -> Monsoon / High Humidity
-      return "monsoon"
-    }
+export function WeatherHealthWarnings({ assessmentScore }: WeatherHealthWarningsProps) {
+  // Auto-detect current season by month
+  const getDefaultSeason = (): SeasonKey => {
+    const month = new Date().getMonth()
+    if (month === 10) return "smog"
+    if (month === 11 || month === 0 || month === 1) return "winter"
+    if (month >= 2 && month <= 5) return "summer"
+    return "monsoon"
   }
 
-  const [activeSeason, setActiveSeason] = useState<SeasonKey>(getCurrentDefaultSeason)
-  const [completedActions, setCompletedActions] = useState<Record<string, boolean>>({})
+  const [activeSeason, setActiveSeason] = useState<SeasonKey>(getDefaultSeason)
+  const [checkedTips, setCheckedTips] = useState<Record<string, boolean>>({})
 
-  const current = seasonalAdvisories[activeSeason]
+  const current = advisories[activeSeason]
   const IconComponent = current.icon
 
-  const toggleAction = (actionTitle: string) => {
-    setCompletedActions((prev) => ({
-      ...prev,
-      [actionTitle]: !prev[actionTitle],
-    }))
+  const toggleTip = (id: string) => {
+    setCheckedTips((prev) => ({ ...prev, [id]: !prev[id] }))
   }
 
-  const handleShareWeatherWhatsApp = () => {
-    const actionsList = current.recommendedActions
-      .map((a, i) => `${i + 1}. *${a.title}*: ${a.detail}`)
-      .join("\n\n")
-    const text = encodeURIComponent(
-      `🌦️ *${current.title} (${current.temperatureRange})*\n` +
-      `*Primary Threat:* ${current.primaryVulnerability}\n\n` +
-      `*Recommended Actions:*\n` +
-      actionsList +
-      `\n\nShared via AI Enabled Personal Healthcare Assistant.`
+  const completedCount = current.tips.filter((t) => checkedTips[t.id]).length
+
+  const handleShareWhatsApp = () => {
+    const tipsList = current.tips.map((t, i) => `${i + 1}. ${t.title}`).join("\n")
+    const msg = encodeURIComponent(
+      `🌦️ *${current.name} Health Alert (${current.temp})*\n` +
+      `*Risk:* ${current.keyRisk}\n\n` +
+      `*Action Steps:*\n${tipsList}\n\n` +
+      `Shared via AI Enabled Personal Healthcare Assistant.`
     )
-    window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank")
+    window.open(`https://api.whatsapp.com/send?text=${msg}`, "_blank")
   }
-
-  // Correlate with user assessment
-  const hasVulnerabilityNotice =
-    assessmentScore !== undefined && assessmentScore !== null && assessmentScore < 75
 
   return (
-    <Card className="border-border shadow-sm overflow-hidden">
-      {/* Header Banner */}
-      <CardHeader className={`pb-4 bg-gradient-to-r ${current.headerBg}`}>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
+    <Card className="border-border shadow-xs overflow-hidden h-full flex flex-col justify-between">
+      <div>
+        {/* Compact Header */}
+        <CardHeader className={`p-4 pb-3 bg-gradient-to-r ${current.bgGradient}`}>
+          <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <div className="h-9 w-9 rounded-xl bg-card border border-border flex items-center justify-center text-foreground shadow-xs">
-                <IconComponent className="h-5 w-5 text-primary" />
+              <div className="h-8 w-8 rounded-lg bg-card border border-border flex items-center justify-center">
+                <IconComponent className={`h-4 w-4 ${current.colorClass}`} />
               </div>
-              <CardTitle className="text-xl font-bold">
-                Weather & Seasonal Health Warnings
-              </CardTitle>
-              <Badge variant="outline" className={`ml-1 ${current.badgeClass}`}>
-                {current.temperatureRange}
-              </Badge>
+              <div>
+                <CardTitle className="text-base font-bold flex items-center gap-1.5">
+                  Seasonal Health Alert
+                </CardTitle>
+                <p className="text-[11px] text-muted-foreground">{current.shortAdvice}</p>
+              </div>
             </div>
-            <CardDescription className="text-xs sm:text-sm">
-              Clinically calibrated seasonal health precautions per WHO and AHA guidelines.
-            </CardDescription>
+            <Badge variant="outline" className={`text-[11px] font-semibold ${current.badgeClass}`}>
+              {current.temp}
+            </Badge>
           </div>
 
-          <div className="flex items-center gap-1.5 self-start sm:self-center bg-background/80 backdrop-blur-xs p-1 rounded-lg border border-border">
-            <span className="text-[11px] font-semibold text-muted-foreground px-2">Season:</span>
+          {/* Quick Season Switcher */}
+          <div className="flex items-center gap-1 pt-3">
             {(
               [
                 { id: "winter", label: "Winter", icon: Snowflake },
-                { id: "smog", label: "Smog / AQI", icon: Wind },
+                { id: "smog", label: "Smog", icon: Wind },
                 { id: "summer", label: "Summer", icon: Sun },
                 { id: "monsoon", label: "Monsoon", icon: CloudRain },
               ] as const
@@ -314,124 +181,83 @@ export function WeatherHealthWarnings({
                 <button
                   key={s.id}
                   onClick={() => setActiveSeason(s.id)}
-                  className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition-all font-medium ${
+                  className={`flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-md font-medium transition-all ${
                     isSelected
                       ? "bg-primary text-primary-foreground shadow-xs"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      : "bg-background/80 text-muted-foreground hover:bg-muted"
                   }`}
                 >
                   <SIcon className="h-3 w-3" />
-                  <span className="hidden md:inline">{s.label}</span>
+                  {s.label}
                 </button>
               )
             })}
           </div>
-        </div>
 
-        {/* Personalized Risk Banner if User has Assessment Score */}
-        {hasVulnerabilityNotice && (
-          <div className="mt-3 flex items-start gap-2.5 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200">
-            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-            <div className="text-xs">
-              <span className="font-semibold">Personalized Health Notice (Score: {assessmentScore}):</span>{" "}
-              Your latest health assessment indicates heightened sensitivity to seasonal stress. Pay close attention to hydration and blood pressure safeguards under {current.title}.
+          {assessmentScore !== undefined && assessmentScore !== null && assessmentScore < 70 && (
+            <div className="mt-2.5 flex items-center gap-1.5 text-[11px] text-amber-700 dark:text-amber-300 font-medium bg-amber-500/10 px-2.5 py-1 rounded-md">
+              <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+              <span>Attention: Your health score ({assessmentScore}) means extra care is advised.</span>
             </div>
-          </div>
-        )}
-      </CardHeader>
+          )}
+        </CardHeader>
 
-      <CardContent className="pt-4 space-y-5">
-        {/* Clinical Threat Overview */}
-        <div className="p-4 rounded-xl border border-border/80 bg-muted/20 space-y-2">
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="h-4 w-4 text-primary" />
-            <h4 className="text-sm font-semibold text-foreground">
-              Primary Seasonal Threat: {current.primaryVulnerability}
-            </h4>
-          </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            {current.clinicalMechanism}
+        {/* Actionable Tips (Clean & Checkable) */}
+        <CardContent className="p-4 pt-3 space-y-2">
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+            Today&apos;s Checklist ({completedCount}/{current.tips.length})
           </p>
 
-          <div className="pt-2 flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] font-medium text-muted-foreground">Most Vulnerable:</span>
-            {current.vulnerableGroups.map((group, idx) => (
-              <Badge
-                key={idx}
-                variant="secondary"
-                className="text-[10px] px-2 py-0.5 font-normal bg-background border border-border"
-              >
-                {group}
-              </Badge>
-            ))}
-          </div>
-        </div>
+          <div className="space-y-1.5">
+            {current.tips.map((tip) => {
+              const isDone = !!checkedTips[tip.id]
+              const TipIcon = tip.icon
 
-        {/* Actionable Prevention Checklist */}
-        <div>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <Activity className="h-4 w-4 text-primary" />
-              Doctor-Recommended Seasonal Action Steps
-            </h4>
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-muted-foreground">
-                {Object.values(completedActions).filter(Boolean).length} / {current.recommendedActions.length} Completed
-              </span>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleShareWeatherWhatsApp}
-                className="h-7 text-xs bg-background text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800"
-                title="Share this seasonal advisory on WhatsApp"
-              >
-                <MessageCircle className="h-3 w-3 mr-1 text-emerald-500" />
-                Share on WhatsApp
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {current.recommendedActions.map((action, index) => {
-              const isChecked = !!completedActions[action.title]
               return (
                 <div
-                  key={index}
-                  onClick={() => toggleAction(action.title)}
-                  className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-start gap-3 select-none ${
-                    isChecked
-                      ? "border-green-500/40 bg-green-500/5 dark:bg-green-950/10"
-                      : "border-border bg-card hover:border-primary/40 hover:shadow-xs"
+                  key={tip.id}
+                  onClick={() => toggleTip(tip.id)}
+                  className={`p-2.5 rounded-lg border text-xs cursor-pointer transition-all flex items-center gap-2.5 select-none ${
+                    isDone
+                      ? "border-green-500/40 bg-green-500/5 text-muted-foreground"
+                      : "border-border bg-card hover:border-primary/40 hover:bg-muted/30"
                   }`}
                 >
                   <div
-                    className={`h-5 w-5 rounded-md border flex items-center justify-center mt-0.5 flex-shrink-0 transition-colors ${
-                      isChecked
+                    className={`h-4 w-4 rounded-sm border flex items-center justify-center flex-shrink-0 transition-colors ${
+                      isDone
                         ? "bg-green-600 border-green-600 text-white"
                         : "border-muted-foreground/40 bg-background"
                     }`}
                   >
-                    {isChecked && <CheckCircle2 className="h-3.5 w-3.5" />}
+                    {isDone && <CheckCircle2 className="h-3 w-3" />}
                   </div>
 
-                  <div className="space-y-1">
-                    <p
-                      className={`text-xs font-semibold ${
-                        isChecked ? "line-through text-muted-foreground" : "text-foreground"
-                      }`}
-                    >
-                      {action.title}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      {action.detail}
-                    </p>
-                  </div>
+                  <TipIcon className={`h-3.5 w-3.5 flex-shrink-0 ${isDone ? "text-muted-foreground" : current.colorClass}`} />
+
+                  <span className={`leading-snug ${isDone ? "line-through opacity-70" : "font-medium text-foreground"}`}>
+                    {tip.title}
+                  </span>
                 </div>
               )
             })}
           </div>
-        </div>
-      </CardContent>
+        </CardContent>
+      </div>
+
+      {/* Footer Share */}
+      <div className="p-3 border-t border-border/60 bg-muted/20 flex items-center justify-between text-xs">
+        <span className="text-[11px] text-muted-foreground">Stay safe this season</span>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleShareWhatsApp}
+          className="h-7 text-xs gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800"
+        >
+          <MessageCircle className="h-3.5 w-3.5 text-emerald-500" />
+          Share on WhatsApp
+        </Button>
+      </div>
     </Card>
   )
 }

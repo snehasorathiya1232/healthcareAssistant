@@ -15,16 +15,16 @@ import {
   AlertTriangle,
   Loader2,
   ClipboardPlus,
+  History,
+  Sparkles,
 } from "lucide-react"
 
 import { supabase } from "@/lib/supabase"
-
 import { Button } from "@/components/ui/button"
-
+import { Badge } from "@/components/ui/badge"
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -39,24 +39,12 @@ type Assessment = {
   created_at: string
 }
 
-type HealthTip = {
-  title: string
-  description: string
-  icon: any
-  type: "info" | "warning" | "success"
-}
-
 export default function AlertsPage() {
   const router = useRouter()
 
-  const [assessment, setAssessment] =
-    useState<Assessment | null>(null)
-
-  const [loading, setLoading] =
-    useState(true)
-
-  const [error, setError] =
-    useState("")
+  const [assessment, setAssessment] = useState<Assessment | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
 
   useEffect(() => {
     loadLatestAssessment()
@@ -67,47 +55,23 @@ export default function AlertsPage() {
       setLoading(true)
       setError("")
 
-      // -----------------------------
-      // Check logged-in user
-      // -----------------------------
-
-      const {
-        data: userData,
-        error: userError,
-      } = await supabase.auth.getUser()
+      const { data: userData, error: userError } = await supabase.auth.getUser()
 
       if (userError || !userData.user) {
         router.push("/login")
         return
       }
 
-      // -----------------------------
-      // Get latest assessment
-      // -----------------------------
-
-      const {
-        data,
-        error: assessmentError,
-      } = await supabase
+      const { data, error: assessmentError } = await supabase
         .from("health_assessments")
-        .select(
-          "id, overall_score, summary, created_at"
-        )
-        .eq(
-          "user_id",
-          userData.user.id
-        )
-        .order("created_at", {
-          ascending: false,
-        })
+        .select("id, overall_score, summary, created_at")
+        .eq("user_id", userData.user.id)
+        .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle()
 
       if (assessmentError) {
-        console.error(
-          "Assessment error:",
-          assessmentError
-        )
+        console.error("Assessment error:", assessmentError)
       }
 
       if (data) {
@@ -128,357 +92,217 @@ export default function AlertsPage() {
           } catch {}
         }
       }
-    } catch (error) {
-      console.error(
-        "Alerts error:",
-        error
-      )
-
-      setError(
-        "Something went wrong while loading health tips."
-      )
+    } catch (err) {
+      console.error("Alerts error:", err)
+      setError("Something went wrong while loading health tips.")
     } finally {
       setLoading(false)
     }
   }
 
-  // --------------------------------
-  // Generate tips
-  // --------------------------------
-
-  const getHealthTips = (
-    score: number
-  ): HealthTip[] => {
-    const tips: HealthTip[] = []
-
-    // Water
-    tips.push({
-      title: "Stay Hydrated",
-      description:
-        "Drink enough water throughout the day. Proper hydration supports overall health.",
-      icon: Droplets,
-      type: "info",
-    })
-
-    // Walking
-    tips.push({
-      title: "Daily Physical Activity",
-      description:
-        "Try to include regular walking or other suitable physical activity in your daily routine.",
-      icon: Footprints,
-      type: "info",
-    })
-
-    // Sleep
-    tips.push({
-      title: "Maintain Healthy Sleep",
-      description:
-        "Aim for a consistent sleep schedule and adequate rest each night.",
-      icon: Moon,
-      type: "info",
-    })
-
-    // Diet
-    tips.push({
-      title: "Balanced Diet",
-      description:
-        "Prefer vegetables, fruits, whole grains, and appropriate sources of protein.",
-      icon: Apple,
-      type: "success",
-    })
-
-    // Score-based tip
-    if (score < 40) {
-      tips.unshift({
-        title: "High Risk Alert",
-        description:
-          "Your latest assessment indicates a high level of health risk. Please consult a qualified healthcare professional for proper evaluation.",
-        icon: AlertTriangle,
-        type: "warning",
-      })
-    } else if (score < 70) {
-      tips.unshift({
-        title: "Health Risk Needs Attention",
-        description:
-          "Some risk factors may need attention. Continue healthy habits and consider discussing your results with a healthcare professional.",
-        icon: HeartPulse,
-        type: "warning",
-      })
-    } else {
-      tips.unshift({
-        title: "Keep Up Your Healthy Habits",
-        description:
-          "Your latest assessment shows a relatively lower risk. Continue maintaining healthy lifestyle habits.",
-        icon: ShieldCheck,
-        type: "success",
-      })
-    }
-
-    return tips
-  }
-
-  // --------------------------------
-  // Loading
-  // --------------------------------
-
   if (loading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
-
         <div className="flex flex-col items-center gap-3">
-
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-
-          <p className="text-muted-foreground">
-            Loading health tips...
-          </p>
-
+          <p className="text-sm text-muted-foreground">Loading health alerts...</p>
         </div>
-
       </div>
     )
   }
-
-  // --------------------------------
-  // Error
-  // --------------------------------
 
   if (error) {
     return (
-      <div className="max-w-4xl mx-auto">
-
+      <div className="max-w-2xl mx-auto py-10">
         <Card>
-
           <CardContent className="p-8 text-center">
-
-            <AlertTriangle className="h-10 w-10 mx-auto mb-4 text-red-500" />
-
-            <h1 className="text-2xl font-bold mb-2">
-              Unable to Load Health Tips
-            </h1>
-
-            <p className="text-muted-foreground mb-5">
-              {error}
-            </p>
-
-            <Button
-              onClick={loadLatestAssessment}
-            >
-              Try Again
-            </Button>
-
+            <AlertTriangle className="h-10 w-10 mx-auto mb-3 text-destructive" />
+            <h2 className="text-xl font-bold mb-1">Unable to Load Health Tips</h2>
+            <p className="text-sm text-muted-foreground mb-4">{error}</p>
+            <Button onClick={loadLatestAssessment}>Try Again</Button>
           </CardContent>
-
         </Card>
-
       </div>
     )
   }
 
-  const tips = assessment ? getHealthTips(assessment.overall_score) : []
+  // Determine score health category
+  const score = assessment?.overall_score ?? null
+  const isGood = score !== null && score >= 70
+  const isModerate = score !== null && score >= 40 && score < 70
+  const isHighRisk = score !== null && score < 40
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-
+    <div className="max-w-7xl mx-auto space-y-4">
       {/* -------------------------------- */}
-      {/* Header */}
+      {/* Top Header Row with Quick Actions */}
       {/* -------------------------------- */}
-
-      <div>
-        <div className="flex items-center gap-3">
-          <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center">
-            <Bell className="h-6 w-6 text-primary" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-border/40">
+        <div className="flex items-center gap-2.5">
+          <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+            <Bell className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold">
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
               Health Alerts & Reminders
             </h1>
-            <p className="text-muted-foreground">
-              Customize daily health schedules, medication timings, and clinical guidance
+            <p className="text-xs text-muted-foreground">
+              Daily hydration, medicine alarms & weather-based preventive care
             </p>
           </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" asChild className="h-8 text-xs">
+            <Link href="/history">
+              <History className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+              History
+            </Link>
+          </Button>
+          <Button size="sm" asChild className="h-8 text-xs gap-1">
+            <Link href="/predict">
+              <ClipboardPlus className="h-3.5 w-3.5" />
+              New Assessment
+            </Link>
+          </Button>
         </div>
       </div>
 
       {/* -------------------------------- */}
-      {/* Reminder Editor Component */}
+      {/* 1-View 2-Column Responsive Grid */}
       {/* -------------------------------- */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+        {/* Left Column: Reminders (7 cols) */}
+        <div className="lg:col-span-7">
+          <ReminderEditor />
+        </div>
 
-      <ReminderEditor />
+        {/* Right Column: Weather & Clinical Guidance (5 cols) */}
+        <div className="lg:col-span-5 space-y-4">
+          {/* Weather Alert Widget */}
+          <WeatherHealthWarnings
+            assessmentScore={assessment?.overall_score}
+            userRiskSummary={assessment?.summary}
+          />
 
-      {/* -------------------------------- */}
-      {/* Weather & Seasonal Health Warnings */}
-      {/* -------------------------------- */}
+          {/* Clinical Guidance & Core Habits Card */}
+          {assessment ? (
+            <Card className="border-border shadow-xs overflow-hidden">
+              <CardHeader className="p-4 pb-2.5 border-b border-border/40 bg-muted/20">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`h-7 w-7 rounded-lg flex items-center justify-center ${
+                        isGood
+                          ? "bg-green-500/10 text-green-600 dark:text-green-400"
+                          : isModerate
+                          ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                          : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                      }`}
+                    >
+                      {isGood ? (
+                        <ShieldCheck className="h-4 w-4" />
+                      ) : isModerate ? (
+                        <HeartPulse className="h-4 w-4" />
+                      ) : (
+                        <AlertTriangle className="h-4 w-4" />
+                      )}
+                    </div>
+                    <div>
+                      <CardTitle className="text-sm font-bold">Personalized Clinical Guidance</CardTitle>
+                      <p className="text-[11px] text-muted-foreground">Based on your latest assessment</p>
+                    </div>
+                  </div>
 
-      <WeatherHealthWarnings
-        assessmentScore={assessment?.overall_score}
-        userRiskSummary={assessment?.summary}
-      />
-
-      {/* -------------------------------- */}
-      {/* Latest Score & Clinical Tips */}
-      {/* -------------------------------- */}
-
-      {assessment ? (
-        <>
-          <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-5">
-                <div className="w-20 h-20 rounded-full border-4 border-primary/30 flex items-center justify-center flex-shrink-0">
-                  <span className="text-2xl font-bold text-primary">
-                    {assessment.overall_score}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    Latest Health Score
-                  </p>
-                  <h2 className="text-xl font-bold mt-1">
-                    Your Personalized Clinical Guidance
-                  </h2>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {assessment.summary ||
-                      "Guidance based on your latest health assessment."}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div>
-            <h2 className="text-xl font-bold mb-4">
-              AI Personalized Tips
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {tips.map((tip, index) => {
-                const Icon = tip.icon
-                const isWarning = tip.type === "warning"
-                return (
-                  <Card
-                    key={index}
-                    className={
-                      isWarning
-                        ? "border-yellow-300 bg-yellow-50/50 dark:bg-yellow-950/20"
-                        : ""
-                    }
+                  <Badge
+                    variant="outline"
+                    className={`text-xs font-semibold px-2 py-0.5 ${
+                      isGood
+                        ? "bg-green-500/10 text-green-600 dark:text-green-400 border-green-200"
+                        : isModerate
+                        ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200"
+                        : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-200"
+                    }`}
                   >
-                    <CardContent className="p-6">
-                      <div className="flex items-start gap-4">
-                        <div
-                          className={
-                            isWarning
-                              ? "h-10 w-10 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center flex-shrink-0"
-                              : "h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0"
-                          }
-                        >
-                          <Icon
-                            className={
-                              isWarning
-                                ? "h-5 w-5 text-yellow-600 dark:text-yellow-400"
-                                : "h-5 w-5 text-primary"
-                            }
-                          />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-lg">
-                            {tip.title}
-                          </h3>
-                          <p className="text-sm text-muted-foreground mt-2 leading-6">
-                            {tip.description}
-                          </p>
-                        </div>
+                    Score: {assessment.overall_score} / 100
+                  </Badge>
+                </div>
+              </CardHeader>
+
+              <CardContent className="p-4 space-y-3">
+                {/* Summary note */}
+                <p className="text-xs text-muted-foreground leading-relaxed bg-muted/30 p-2.5 rounded-lg border border-border/40">
+                  {assessment.summary ||
+                    (isGood
+                      ? "Healthy vital range detected. Maintain regular daily exercise, hydration, and low-sodium nutrition."
+                      : isModerate
+                      ? "Moderate risk factors noted. Keep track of morning blood pressure and schedule routine checkups."
+                      : "Elevated risk indicators observed. Please consult a qualified doctor for comprehensive clinical evaluation.")}
+                </p>
+
+                {/* 4 Core Daily Habits */}
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    Core Preventive Habits
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="p-2 rounded-lg border border-border/60 bg-card flex items-center gap-2">
+                      <Droplets className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                      <div>
+                        <div className="font-semibold text-[11px]">Hydration</div>
+                        <div className="text-[10px] text-muted-foreground">2.5L+ fluids daily</div>
                       </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
+                    </div>
+
+                    <div className="p-2 rounded-lg border border-border/60 bg-card flex items-center gap-2">
+                      <Footprints className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                      <div>
+                        <div className="font-semibold text-[11px]">Physical Activity</div>
+                        <div className="text-[10px] text-muted-foreground">30 min brisk walk</div>
+                      </div>
+                    </div>
+
+                    <div className="p-2 rounded-lg border border-border/60 bg-card flex items-center gap-2">
+                      <Moon className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+                      <div>
+                        <div className="font-semibold text-[11px]">Restful Sleep</div>
+                        <div className="text-[10px] text-muted-foreground">7-8 hrs regular rest</div>
+                      </div>
+                    </div>
+
+                    <div className="p-2 rounded-lg border border-border/60 bg-card flex items-center gap-2">
+                      <Apple className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                      <div>
+                        <div className="font-semibold text-[11px]">Balanced Diet</div>
+                        <div className="text-[10px] text-muted-foreground">Low salt & high fiber</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-border shadow-xs bg-muted/20">
+              <CardContent className="p-5 text-center">
+                <Sparkles className="h-6 w-6 mx-auto mb-2 text-primary" />
+                <h3 className="text-sm font-bold text-foreground">Get Personalized Health Insights</h3>
+                <p className="text-xs text-muted-foreground mt-1 mb-3">
+                  Take a 2-minute assessment to unlock custom clinical guidance alongside your reminders.
+                </p>
+                <Button size="sm" asChild className="h-7 text-xs">
+                  <Link href="/predict">Start Assessment</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Minimal Clinical Disclaimer */}
+          <div className="p-2.5 rounded-lg border border-border/50 bg-muted/20 text-[11px] text-muted-foreground flex items-center gap-2">
+            <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+            <span>Reminders & tips provide preventive guidance and do not replace professional medical advice.</span>
           </div>
-        </>
-      ) : (
-        <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="p-8 text-center">
-            <ClipboardPlus className="h-10 w-10 mx-auto mb-3 text-primary" />
-            <h2 className="text-xl font-bold mb-1">
-              Unlock Personalized Health Guidance
-            </h2>
-            <p className="text-sm text-muted-foreground mb-5 max-w-md mx-auto">
-              Complete a health assessment to receive tailored disease risk alerts and personalized lifestyle advice alongside your reminders.
-            </p>
-            <Button asChild>
-              <Link href="/predict">
-                <ClipboardPlus className="h-4 w-4 mr-2" />
-                Start Health Assessment
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* -------------------------------- */}
-      {/* Important Reminder */}
-      {/* -------------------------------- */}
-
-      <Card className="border-risk-medium/30 bg-risk-medium/5">
-
-        <CardContent className="p-5">
-
-          <div className="flex items-start gap-3">
-
-            <AlertTriangle className="h-5 w-5 text-risk-medium mt-0.5 flex-shrink-0" />
-
-            <div>
-
-              <h3 className="font-semibold mb-1">
-                Important Reminder
-              </h3>
-
-              <p className="text-sm text-muted-foreground">
-                These tips are general health guidance
-                and are not a medical diagnosis. Always
-                consult a qualified healthcare professional
-                for personal medical advice.
-              </p>
-
-            </div>
-
-          </div>
-
-        </CardContent>
-
-      </Card>
-
-      {/* -------------------------------- */}
-      {/* Actions */}
-      {/* -------------------------------- */}
-
-      <div className="flex flex-col sm:flex-row justify-center gap-3 py-4">
-
-        <Button asChild>
-
-          <Link href="/predict">
-
-            <ClipboardPlus className="h-4 w-4 mr-2" />
-
-            New Assessment
-
-          </Link>
-
-        </Button>
-
-        <Button
-          variant="outline"
-          asChild
-        >
-
-          <Link href="/history">
-            View Assessment History
-          </Link>
-
-        </Button>
-
+        </div>
       </div>
-
     </div>
   )
 }

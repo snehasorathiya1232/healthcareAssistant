@@ -458,206 +458,67 @@ export function ReminderEditor() {
   }
 
   return (
-    <Card className="border-border shadow-sm">
-      <CardHeader className="pb-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                <BellRing className="h-4 w-4" />
-              </div>
-              <CardTitle className="text-xl font-bold">Health Reminder Editor</CardTitle>
-              <Badge variant="outline" className="ml-1 bg-primary/5 text-primary border-primary/20">
-                {activeCount} Active
-              </Badge>
-            </div>
-            <CardDescription className="mt-1">
-              Customize personal daily health alarms for hydration, medicine doses, and fitness.
-            </CardDescription>
-          </div>
-
+    <Card className="border-border shadow-xs">
+      <CardHeader className="p-4 pb-3 space-y-3">
+        {/* Top Header Row with Actions */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleResetDefaults}
-              className="text-xs h-9 text-muted-foreground hover:text-foreground"
-              title="Reset to sample reminders"
-            >
-              <RotateCcw className="h-3.5 w-3.5 mr-1" />
-              Reset
-            </Button>
-            <Button onClick={handleOpenAdd} size="sm" className="h-9 px-4 gap-1.5 shadow-sm">
-              <Plus className="h-4 w-4" />
-              Add Reminder
-            </Button>
-          </div>
-        </div>
-
-        {/* Quick Add Presets Bar */}
-        <div className="pt-3 border-t border-border/60 mt-3">
-          <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
-            <Sparkles className="h-3 w-3 text-amber-500" />
-            Quick Presets (Click to add):
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() =>
-                handleQuickAdd(
-                  "Drink Water",
-                  "water",
-                  "interval",
-                  "5",
-                  "AM",
-                  "Hydration check: drink 250-500ml water"
-                )
-              }
-              className="text-xs px-2.5 py-1 rounded-full border border-blue-200 dark:border-blue-900 bg-blue-50/60 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 transition-colors flex items-center gap-1"
-            >
-              <Droplets className="h-3 w-3 text-blue-500" />
-              + Water (Every 5h)
-            </button>
-            <button
-              onClick={() =>
-                handleQuickAdd(
-                  "Drink Water",
-                  "water",
-                  "interval",
-                  "2",
-                  "AM",
-                  "Hydration check: drink 1 glass of water"
-                )
-              }
-              className="text-xs px-2.5 py-1 rounded-full border border-blue-200 dark:border-blue-900 bg-blue-50/60 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 transition-colors flex items-center gap-1"
-            >
-              <Droplets className="h-3 w-3 text-blue-500" />
-              + Water (Every 2h)
-            </button>
-            <button
-              onClick={() =>
-                handleQuickAdd(
-                  "Take Medicine",
-                  "medicine",
-                  "time",
-                  "05:30",
-                  "AM",
-                  "Take prescribed medication with warm water"
-                )
-              }
-              className="text-xs px-2.5 py-1 rounded-full border border-rose-200 dark:border-rose-900 bg-rose-50/60 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 hover:bg-rose-100 transition-colors flex items-center gap-1"
-            >
-              <Pill className="h-3 w-3 text-rose-500" />
-              + Medicine (5:30 AM)
-            </button>
-            <button
-              onClick={() =>
-                handleQuickAdd(
-                  "Night Medicine",
-                  "medicine",
-                  "time",
-                  "09:30",
-                  "PM",
-                  "Take nighttime dose after dinner"
-                )
-              }
-              className="text-xs px-2.5 py-1 rounded-full border border-rose-200 dark:border-rose-900 bg-rose-50/60 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 hover:bg-rose-100 transition-colors flex items-center gap-1"
-            >
-              <Pill className="h-3 w-3 text-rose-500" />
-              + Medicine (9:30 PM)
-            </button>
-            <button
-              onClick={() =>
-                handleQuickAdd(
-                  "Check Fasting Sugar",
-                  "glucose",
-                  "time",
-                  "07:30",
-                  "AM",
-                  "Record fasting blood sugar level before breakfast"
-                )
-              }
-              className="text-xs px-2.5 py-1 rounded-full border border-purple-200 dark:border-purple-900 bg-purple-50/60 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 hover:bg-purple-100 transition-colors flex items-center gap-1"
-            >
-              <Activity className="h-3 w-3 text-purple-500" />
-              + Blood Sugar (7:30 AM)
-            </button>
-            <button
-              onClick={() =>
-                handleQuickAdd(
-                  "Post-Meal Sugar Check",
-                  "glucose",
-                  "time",
-                  "02:00",
-                  "PM",
-                  "Check postprandial glucose (2 hours after lunch)"
-                )
-              }
-              className="text-xs px-2.5 py-1 rounded-full border border-purple-200 dark:border-purple-900 bg-purple-50/60 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 hover:bg-purple-100 transition-colors flex items-center gap-1"
-            >
-              <Activity className="h-3 w-3 text-purple-500" />
-              + Sugar (Post-Lunch)
-            </button>
-            <button
-              onClick={() =>
-                handleQuickAdd(
-                  "Post-Meal Walk",
-                  "walk",
-                  "time",
-                  "07:30",
-                  "PM",
-                  "15-20 min light walk for healthy digestion"
-                )
-              }
-              className="text-xs px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-900 bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 transition-colors flex items-center gap-1"
-            >
-              <Footprints className="h-3 w-3 text-emerald-500" />
-              + Walk (7:30 PM)
-            </button>
-          </div>
-        </div>
-
-        {/* Digital Communication Channel / Notification Banner */}
-        <div className="pt-3 border-t border-border/60 mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
-          <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
-              <Smartphone className="h-4 w-4" />
+            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+              <BellRing className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                Digital Communication Channel
-                <Badge
-                  variant="outline"
-                  className={`text-[10px] h-4 px-1.5 ${
-                    notificationPermission === "granted"
-                      ? "bg-green-500/10 text-green-600 border-green-200"
-                      : "bg-amber-500/10 text-amber-600 border-amber-200"
-                  }`}
-                >
-                  {notificationPermission === "granted" ? "Push Active" : "Push Inactive"}
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-base font-bold">Daily Health Reminders</CardTitle>
+                <Badge variant="outline" className="text-[10px] h-4 px-1.5 bg-primary/5 text-primary border-primary/20">
+                  {activeCount} Active
                 </Badge>
-              </p>
-              <p className="text-[11px] text-muted-foreground">
-                Receive browser alert notifications for water, medicines, and sugar checks on your device.
-              </p>
+              </div>
+              <p className="text-[11px] text-muted-foreground">Water, medicines, sugar checks & walking alarms</p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
+          {/* Unified Action Buttons */}
+          <div className="flex flex-wrap items-center gap-1.5 self-start sm:self-center">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleShareAllWhatsApp}
+              className="h-7 text-xs px-2.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800"
+              title="Share entire schedule on WhatsApp"
+            >
+              <MessageCircle className="h-3 w-3 mr-1 text-emerald-500" />
+              WhatsApp
+            </Button>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleTriggerVoiceCall()}
+              className="h-7 text-xs px-2.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 border-indigo-300 dark:border-indigo-800"
+              title="Test automated voice call reminder"
+            >
+              <PhoneCall className="h-3 w-3 mr-1 text-indigo-500" />
+              Voice Call
+            </Button>
+
             {notificationPermission !== "granted" ? (
               <Button
                 size="sm"
                 variant="outline"
                 onClick={handleEnableNotifications}
-                className="h-7 text-xs bg-background"
+                className="h-7 text-xs px-2.5"
+                title="Enable browser notifications"
               >
-                Enable Notifications
+                <Smartphone className="h-3 w-3 mr-1" />
+                Push
               </Button>
             ) : (
               <Button
                 size="sm"
                 variant="outline"
                 onClick={handleSendTestNotification}
-                className="h-7 text-xs bg-background text-primary border-primary/30"
+                className="h-7 text-xs px-2.5 text-primary border-primary/30"
+                title="Send test desktop notification"
               >
                 {testNotificationSent ? (
                   <>
@@ -667,61 +528,81 @@ export function ReminderEditor() {
                 ) : (
                   <>
                     <Send className="h-3 w-3 mr-1" />
-                    Send Test Alert
+                    Test Push
                   </>
                 )}
               </Button>
             )}
 
-            {/* WhatsApp Integration Button */}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleShareAllWhatsApp}
-              className="h-7 text-xs bg-background text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800"
-              title="Share entire daily schedule to WhatsApp"
-            >
-              <MessageCircle className="h-3 w-3 mr-1 text-emerald-500" />
-              WhatsApp
-            </Button>
-
-            {/* Automated Voice Call Button */}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleTriggerVoiceCall()}
-              className="h-7 text-xs bg-background text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 border-indigo-300 dark:border-indigo-800"
-              title="Demonstrate automated voice call reminder"
-            >
-              <PhoneCall className="h-3 w-3 mr-1 text-indigo-500" />
-              Voice Call Alert
+            <Button onClick={handleOpenAdd} size="sm" className="h-7 px-2.5 gap-1 text-xs shadow-xs">
+              <Plus className="h-3.5 w-3.5" />
+              Add
             </Button>
           </div>
         </div>
 
-        {/* Filter Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-3">
-          <span className="text-xs text-muted-foreground mr-1">Filter:</span>
-          {[
-            { id: "all", label: "All" },
-            { id: "active", label: "Active" },
-            { id: "water", label: "Water" },
-            { id: "medicine", label: "Medicine" },
-            { id: "glucose", label: "Blood Sugar" },
-            { id: "walk", label: "Activity" },
-          ].map((tab) => (
+        {/* Clean 1-Line Presets & Filters */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/60">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
+            <span className="text-[11px] font-semibold text-foreground flex items-center gap-1">
+              <Sparkles className="h-3 w-3 text-amber-500" /> Quick Add:
+            </span>
             <button
-              key={tab.id}
-              onClick={() => setFilterCategory(tab.id)}
-              className={`text-xs px-2.5 py-1 rounded-md transition-all font-medium ${
-                filterCategory === tab.id
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
-              }`}
+              onClick={() =>
+                handleQuickAdd("Drink Water", "water", "interval", "5", "AM", "Drink 300-500ml water")
+              }
+              className="px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-900 bg-blue-50/60 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 text-[11px] font-medium transition-colors"
             >
-              {tab.label}
+              + 💧 Water (5h)
             </button>
-          ))}
+            <button
+              onClick={() =>
+                handleQuickAdd("Take Medicine", "medicine", "time", "05:30", "AM", "Take prescribed medication")
+              }
+              className="px-2 py-0.5 rounded-full border border-rose-200 dark:border-rose-900 bg-rose-50/60 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 hover:bg-rose-100 text-[11px] font-medium transition-colors"
+            >
+              + 💊 Med (5:30 AM)
+            </button>
+            <button
+              onClick={() =>
+                handleQuickAdd("Check Blood Sugar", "glucose", "time", "07:30", "AM", "Fasting blood sugar before breakfast")
+              }
+              className="px-2 py-0.5 rounded-full border border-purple-200 dark:border-purple-900 bg-purple-50/60 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 hover:bg-purple-100 text-[11px] font-medium transition-colors"
+            >
+              + 🩸 Sugar (7:30 AM)
+            </button>
+            <button
+              onClick={() =>
+                handleQuickAdd("Evening Walk", "walk", "time", "06:30", "PM", "20-30 min brisk walk")
+              }
+              className="px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-900 bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 text-[11px] font-medium transition-colors"
+            >
+              + 🚶 Walk (6:30 PM)
+            </button>
+          </div>
+
+          {/* Minimal Filter Tabs */}
+          <div className="flex items-center gap-1">
+            {[
+              { id: "all", label: "All" },
+              { id: "water", label: "Water" },
+              { id: "medicine", label: "Meds" },
+              { id: "glucose", label: "Sugar" },
+              { id: "walk", label: "Walk" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setFilterCategory(tab.id)}
+                className={`text-[11px] px-2 py-0.5 rounded-md font-medium transition-all ${
+                  filterCategory === tab.id
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
       </CardHeader>
 
@@ -735,7 +616,7 @@ export function ReminderEditor() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {filteredReminders.map((rem) => {
               const config = categoryConfig[rem.category] || categoryConfig.general
               const IconComponent = config.icon
@@ -743,8 +624,8 @@ export function ReminderEditor() {
               return (
                 <div
                   key={rem.id}
-                  className={`relative flex flex-col justify-between rounded-xl border p-4 transition-all duration-200 bg-card ${
-                    rem.isActive ? "border-border shadow-xs " + config.cardBorder : "opacity-60 border-border/60 bg-muted/30"
+                  className={`p-3 rounded-xl border transition-all flex flex-col justify-between bg-card ${
+                    rem.isActive ? "border-border shadow-xs hover:border-primary/40" : "opacity-60 border-border/60 bg-muted/20"
                   }`}
                 >
                   <div>
@@ -767,41 +648,41 @@ export function ReminderEditor() {
                       </div>
                     </div>
 
-                    {/* Title */}
-                    <h3 className={`font-semibold text-base leading-snug ${rem.isActive ? "text-foreground" : "text-muted-foreground line-through"}`}>
-                      {rem.title}
-                    </h3>
-
-                    {/* Schedule Badge */}
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-primary mt-2">
-                      {rem.timingType === "interval" ? (
-                        <Timer className="h-3.5 w-3.5 flex-shrink-0 text-primary" />
-                      ) : (
-                        <Clock className="h-3.5 w-3.5 flex-shrink-0 text-primary" />
-                      )}
-                      <span>{rem.frequencyLabel}</span>
+                    {/* Title & Frequency */}
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className={`font-semibold text-sm leading-snug ${rem.isActive ? "text-foreground" : "text-muted-foreground line-through"}`}>
+                        {rem.title}
+                      </h3>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded whitespace-nowrap shrink-0">
+                        {rem.timingType === "interval" ? (
+                          <Timer className="h-3 w-3" />
+                        ) : (
+                          <Clock className="h-3 w-3" />
+                        )}
+                        {rem.frequencyLabel}
+                      </span>
                     </div>
 
                     {/* Notes */}
                     {rem.notes && (
-                      <p className="text-xs text-muted-foreground mt-2 line-clamp-2 leading-relaxed">
+                      <p className="text-[11px] text-muted-foreground mt-1 line-clamp-1">
                         {rem.notes}
                       </p>
                     )}
                   </div>
 
                   {/* Bottom Action Buttons */}
-                  <div className="flex items-center justify-between pt-3 mt-3 border-t border-border/50 text-xs">
-                    <span className="text-[11px] text-muted-foreground">
+                  <div className="flex items-center justify-between pt-2 mt-2 border-t border-border/50 text-[11px]">
+                    <span className="text-[10px] text-muted-foreground/80 uppercase tracking-wider font-medium">
                       {rem.timingType === "interval" ? "Repeating Alarm" : "Daily Schedule"}
                     </span>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-0.5">
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => handleShareWhatsApp(rem)}
-                        className="h-7 w-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
-                        title="Share this reminder to WhatsApp"
+                        className="h-6 w-6 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
+                        title="Share on WhatsApp"
                       >
                         <MessageCircle className="h-3.5 w-3.5" />
                       </Button>
@@ -809,8 +690,8 @@ export function ReminderEditor() {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleTriggerVoiceCall(rem)}
-                        className="h-7 w-7 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/20"
-                        title="Trigger automated voice call"
+                        className="h-6 w-6 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/20"
+                        title="Trigger Voice Call Alert"
                       >
                         <PhoneCall className="h-3.5 w-3.5" />
                       </Button>
@@ -818,19 +699,19 @@ export function ReminderEditor() {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleOpenEdit(rem)}
-                        className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted"
+                        className="h-6 w-6 text-muted-foreground hover:text-foreground hover:bg-muted"
                         title="Edit reminder"
                       >
-                        <Edit3 className="h-3.5 w-3.5" />
+                        <Edit3 className="h-3 w-3" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => handleDelete(rem.id)}
-                        className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                         title="Delete reminder"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
                   </div>
