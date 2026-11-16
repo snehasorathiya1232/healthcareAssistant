@@ -96,6 +96,10 @@ export default function AlertsPage() {
         user = userData.user
       }
 
+      if (!user) {
+        return
+      }
+
       // 3-second database query timeout protection
       const dbQueryPromise = supabase
         .from("health_assessments")

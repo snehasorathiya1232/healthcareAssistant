@@ -103,6 +103,10 @@ export default function DashboardPage() {
         user = userData.user
       }
 
+      if (!user) {
+        return
+      }
+
       const name =
         user.user_metadata?.full_name ||
         user.email?.split("@")[0] ||

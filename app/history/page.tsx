@@ -88,6 +88,10 @@ export default function HistoryPage() {
         user = userData.user
       }
 
+      if (!user) {
+        return
+      }
+
       const dbQueryPromise = supabase
         .from("health_assessments")
         .select("id, overall_score, summary, created_at")

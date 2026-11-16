@@ -117,6 +117,10 @@ export default function ResultsContent() {
         user = userData.user
       }
 
+      if (!user) {
+        return
+      }
+
       setIsDemoUser(false)
 
       const params = new URLSearchParams(window.location.search)
