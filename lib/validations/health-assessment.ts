@@ -207,13 +207,11 @@ export function validateBloodPressurePair(
 }
 
 /**
- * Validates Step 1 fields (Personal Info: Age, Gender, Height, Weight).
+ * Validates Step 1 fields (Personal Info: Age, Gender).
  */
 export function validateStep1(data: {
   age?: unknown
   gender?: unknown
-  height?: unknown
-  weight?: unknown
 }): Record<string, string> {
   const errors: Record<string, string> = {}
 
@@ -223,19 +221,15 @@ export function validateStep1(data: {
   const genderRes = validateGender(data.gender)
   if (!genderRes.valid) errors.gender = genderRes.error!
 
-  const heightRes = validateNumericField(data.height, "height")
-  if (!heightRes.valid) errors.height = heightRes.error!
-
-  const weightRes = validateNumericField(data.weight, "weight")
-  if (!weightRes.valid) errors.weight = weightRes.error!
-
   return errors
 }
 
 /**
- * Validates Step 2 fields (Vitals: Systolic BP, Diastolic BP, Blood Sugar, Cholesterol, Heart Rate).
+ * Validates Step 2 fields (Vitals: Height, Weight, Systolic BP, Diastolic BP, Blood Sugar, Cholesterol, Heart Rate).
  */
 export function validateStep2(data: {
+  height?: unknown
+  weight?: unknown
   bloodPressureSystolic?: unknown
   bloodPressureDiastolic?: unknown
   bloodSugar?: unknown
@@ -243,6 +237,12 @@ export function validateStep2(data: {
   heartRate?: unknown
 }): Record<string, string> {
   const errors: Record<string, string> = {}
+
+  const heightRes = validateNumericField(data.height, "height")
+  if (!heightRes.valid) errors.height = heightRes.error!
+
+  const weightRes = validateNumericField(data.weight, "weight")
+  if (!weightRes.valid) errors.weight = weightRes.error!
 
   const bpPair = validateBloodPressurePair(
     data.bloodPressureSystolic,

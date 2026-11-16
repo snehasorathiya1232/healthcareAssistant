@@ -48,7 +48,7 @@ export function DiseaseSection() {
             Diseases We Predict
           </h2>
           <p className="text-lg text-muted-foreground">
-            Our AI models are trained on extensive medical datasets to accurately predict risks for these major health conditions.
+            Our evidence-based clinical algorithms evaluate your vital parameters to accurately estimate risk levels for these major health conditions.
           </p>
         </div>
 

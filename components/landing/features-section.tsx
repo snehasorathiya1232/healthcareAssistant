@@ -3,8 +3,8 @@ import { Brain, LineChart, Bell, Shield, Users, Smartphone } from "lucide-react"
 const features = [
   {
     icon: Brain,
-    title: "AI-Powered Analysis",
-    description: "Advanced machine learning algorithms analyze your health data to predict potential disease risks with high accuracy."
+    title: "Clinical Risk Analysis",
+    description: "Intelligent rule-based scoring algorithms evaluate your health indicators and vital markers to identify potential disease risks."
   },
   {
     icon: LineChart,

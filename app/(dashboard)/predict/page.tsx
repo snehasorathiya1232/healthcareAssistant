@@ -56,6 +56,12 @@ export interface FormData {
   familyCancer: boolean
   previousConditions: string[]
   currentMedications: string
+  symptoms: string[]
+
+  // Optional laboratory parameters
+  serumCreatinine: string
+  ast: string
+  alt: string
 
   smokingStatus: string
   alcoholConsumption: string
@@ -82,6 +88,11 @@ const initialFormData: FormData = {
   familyCancer: false,
   previousConditions: [],
   currentMedications: "",
+  symptoms: [],
+
+  serumCreatinine: "",
+  ast: "",
+  alt: "",
 
   smokingStatus: "",
   alcoholConsumption: "",
@@ -173,8 +184,8 @@ export default function PredictPage() {
       const validation = validateHealthAssessment(formData)
       if (!validation.isValid) {
         setFieldErrors(validation.errors)
-        // If errors belong to step 1 or step 2, navigate there
-        const step1Keys = ["age", "gender", "height", "weight"]
+        // If errors belong to step 1 (age/gender) or step 2 (vitals), navigate there
+        const step1Keys = ["age", "gender"]
         const hasStep1Err = step1Keys.some((k) => validation.errors[k])
         if (hasStep1Err) {
           setCurrentStep(1)
