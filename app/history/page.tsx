@@ -39,73 +39,73 @@ export default function HistoryPage() {
   const [error, setError] = useState("")
 
   useEffect(() => {
-    loadHistory()
+    let hasLocal = false
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("healthAssessmentResult")
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached)
+          if (parsed && (parsed.overallScore !== undefined || parsed.summary)) {
+            setAssessments([
+              {
+                id: parsed.id || "local-latest",
+                overall_score: parsed.overallScore ?? 80,
+                summary: parsed.summary,
+                created_at: new Date().toISOString(),
+              },
+            ])
+            hasLocal = true
+            setLoading(false)
+          }
+        } catch {}
+      }
+    }
+
+    loadHistory(hasLocal)
   }, [])
 
-  const loadHistory = async () => {
+  const loadHistory = async (hasLocalData: boolean) => {
     try {
-      setLoading(true)
+      if (!hasLocalData) {
+        setLoading(true)
+      }
       setError("")
 
-      const {
-        data: userData,
-        error: userError,
-      } = await supabase.auth.getUser()
+      const { data: sessionData } = await supabase.auth.getSession()
+      let user = sessionData?.session?.user
 
-      if (userError || !userData.user) {
-        router.push("/login")
-        return
+      if (!user) {
+        const timeoutPromise = new Promise<{ data: any; error: any }>((resolve) =>
+          setTimeout(() => resolve({ data: { user: null }, error: new Error("Auth timeout") }), 2000)
+        )
+        const userPromise = supabase.auth.getUser()
+        const { data: userData, error: userError } = await Promise.race([userPromise, timeoutPromise])
+
+        if (userError || !userData?.user) {
+          router.push("/login")
+          return
+        }
+        user = userData.user
       }
 
-      const {
-        data,
-        error: historyError,
-      } = await supabase
+      const dbQueryPromise = supabase
         .from("health_assessments")
-        .select(
-          "id, overall_score, summary, created_at"
-        )
-        .eq("user_id", userData.user.id)
-        .order("created_at", {
-          ascending: false,
-        })
+        .select("id, overall_score, summary, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
 
-      if (historyError) {
-        console.error(
-          "History loading error:",
-          historyError
-        )
-      }
+      const dbTimeoutPromise = new Promise<{ data: any; error: any }>((resolve) =>
+        setTimeout(() => resolve({ data: null, error: new Error("DB Timeout") }), 3000)
+      )
+
+      const { data } = await Promise.race([dbQueryPromise, dbTimeoutPromise])
 
       if (data && data.length > 0) {
         setAssessments(data)
-      } else if (typeof window !== "undefined") {
-        const cached = localStorage.getItem("healthAssessmentResult")
-        if (cached) {
-          try {
-            const parsed = JSON.parse(cached)
-            if (parsed && parsed.overallScore !== undefined) {
-              setAssessments([
-                {
-                  id: parsed.id || "local-latest",
-                  overall_score: parsed.overallScore,
-                  summary: parsed.summary,
-                  created_at: new Date().toISOString(),
-                },
-              ])
-            }
-          } catch {}
-        }
       }
     } catch (error) {
-      console.error(
-        "History error:",
-        error
-      )
-
-      setError(
-        "Something went wrong while loading history."
-      )
+      console.warn("History fast load notice:", error)
+      setError("Something went wrong while loading history.")
     } finally {
       setLoading(false)
     }

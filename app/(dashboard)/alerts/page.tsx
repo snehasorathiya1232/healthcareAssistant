@@ -47,54 +47,75 @@ export default function AlertsPage() {
   const [error, setError] = useState("")
 
   useEffect(() => {
-    loadLatestAssessment()
+    // 1. Instant local cache check
+    let hasLocal = false
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("healthAssessmentResult")
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached)
+          if (parsed && (parsed.overallScore !== undefined || parsed.summary)) {
+            setAssessment({
+              id: parsed.id || "local-latest",
+              overall_score: parsed.overallScore ?? 80,
+              summary: parsed.summary,
+              created_at: new Date().toISOString(),
+            })
+            hasLocal = true
+            setLoading(false)
+          }
+        } catch {}
+      }
+    }
+
+    loadLatestAssessment(hasLocal)
   }, [])
 
-  const loadLatestAssessment = async () => {
+  const loadLatestAssessment = async (hasLocalData: boolean = false) => {
     try {
-      setLoading(true)
+      if (!hasLocalData) {
+        setLoading(true)
+      }
       setError("")
 
-      const { data: userData, error: userError } = await supabase.auth.getUser()
+      // Fast session check
+      const { data: sessionData } = await supabase.auth.getSession()
+      let user = sessionData?.session?.user
 
-      if (userError || !userData.user) {
-        router.push("/login")
-        return
+      if (!user) {
+        const timeoutPromise = new Promise<{ data: any; error: any }>((resolve) =>
+          setTimeout(() => resolve({ data: { user: null }, error: new Error("Auth timeout") }), 2000)
+        )
+        const userPromise = supabase.auth.getUser()
+        const { data: userData, error: userError } = await Promise.race([userPromise, timeoutPromise])
+
+        if (userError || !userData?.user) {
+          router.push("/login")
+          return
+        }
+        user = userData.user
       }
 
-      const { data, error: assessmentError } = await supabase
+      // 3-second database query timeout protection
+      const dbQueryPromise = supabase
         .from("health_assessments")
         .select("id, overall_score, summary, created_at")
-        .eq("user_id", userData.user.id)
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle()
 
-      if (assessmentError) {
-        console.error("Assessment error:", assessmentError)
-      }
+      const dbTimeoutPromise = new Promise<{ data: any; error: any }>((resolve) =>
+        setTimeout(() => resolve({ data: null, error: new Error("DB Timeout") }), 3000)
+      )
+
+      const { data } = await Promise.race([dbQueryPromise, dbTimeoutPromise])
 
       if (data) {
         setAssessment(data)
-      } else if (typeof window !== "undefined") {
-        const cached = localStorage.getItem("healthAssessmentResult")
-        if (cached) {
-          try {
-            const parsed = JSON.parse(cached)
-            if (parsed && parsed.overallScore !== undefined) {
-              setAssessment({
-                id: parsed.id || "local-latest",
-                overall_score: parsed.overallScore,
-                summary: parsed.summary,
-                created_at: new Date().toISOString(),
-              })
-            }
-          } catch {}
-        }
       }
     } catch (err) {
-      console.error("Alerts error:", err)
-      setError("Something went wrong while loading health tips.")
+      console.warn("Alerts fast load notice:", err)
     } finally {
       setLoading(false)
     }
@@ -119,7 +140,7 @@ export default function AlertsPage() {
             <AlertTriangle className="h-10 w-10 mx-auto mb-3 text-destructive" />
             <h2 className="text-xl font-bold mb-1">Unable to Load Health Tips</h2>
             <p className="text-sm text-muted-foreground mb-4">{error}</p>
-            <Button onClick={loadLatestAssessment}>Try Again</Button>
+            <Button onClick={() => loadLatestAssessment(false)}>Try Again</Button>
           </CardContent>
         </Card>
       </div>

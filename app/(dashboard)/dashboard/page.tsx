@@ -51,63 +51,100 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadDashboard()
+    // 1. Instant local cache check (renders in < 5ms without network waiting)
+    let hasLocal = false
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("healthAssessmentResult")
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached)
+          if (parsed && (parsed.overallScore !== undefined || parsed.riskResults)) {
+            setAssessments([
+              {
+                id: parsed.id || "local-latest",
+                overall_score: parsed.overallScore ?? 80,
+                summary: parsed.summary,
+                created_at: new Date().toISOString(),
+                result_data: parsed,
+              },
+            ])
+            hasLocal = true
+            setLoading(false)
+          }
+        } catch {}
+      }
+    }
+
+    loadDashboard(hasLocal)
   }, [])
 
-  const loadDashboard = async () => {
+  const loadDashboard = async (hasLocalData: boolean) => {
     try {
-      setLoading(true)
+      if (!hasLocalData) {
+        setLoading(true)
+      }
 
-      // Check logged-in user
-      const {
-        data: userData,
-        error: userError,
-      } = await supabase.auth.getUser()
+      // Fast instant session check (cached locally in browser)
+      const { data: sessionData } = await supabase.auth.getSession()
+      let user = sessionData?.session?.user
 
-      if (userError || !userData.user) {
-        router.push("/login")
-        return
+      if (!user) {
+        // Fallback check with 2s timeout
+        const timeoutPromise = new Promise<{ data: any; error: any }>((resolve) =>
+          setTimeout(() => resolve({ data: { user: null }, error: new Error("Auth timeout") }), 2000)
+        )
+        const userPromise = supabase.auth.getUser()
+        const { data: userData, error: userError } = await Promise.race([userPromise, timeoutPromise])
+
+        if (userError || !userData?.user) {
+          router.push("/login")
+          return
+        }
+        user = userData.user
       }
 
       const name =
-        userData.user.user_metadata?.full_name ||
-        userData.user.email?.split("@")[0] ||
+        user.user_metadata?.full_name ||
+        user.email?.split("@")[0] ||
         "there"
       setUserName(name)
 
-      // Get user's assessments
-      const { data, error } = await supabase
+      // Query database with strict 3-second timeout protection so slow cold starts never freeze the UI
+      const dbQueryPromise = supabase
         .from("health_assessments")
         .select("id, overall_score, summary, created_at, result_data")
-        .eq("user_id", userData.user.id)
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false })
+
+      const dbTimeoutPromise = new Promise<{ data: any; error: any }>((resolve) =>
+        setTimeout(() => resolve({ data: null, error: new Error("DB Timeout") }), 3000)
+      )
+
+      const { data, error } = await Promise.race([dbQueryPromise, dbTimeoutPromise])
 
       if (!error && data && data.length > 0) {
         setAssessments(data)
-      } else {
-        // Fallback to local storage if available
-        if (typeof window !== "undefined") {
-          const cached = localStorage.getItem("healthAssessmentResult")
-          if (cached) {
-            try {
-              const parsed = JSON.parse(cached)
-              if (parsed && parsed.overallScore !== undefined) {
-                setAssessments([
-                  {
-                    id: parsed.id || "local-latest",
-                    overall_score: parsed.overallScore,
-                    summary: parsed.summary,
-                    created_at: new Date().toISOString(),
-                    result_data: parsed,
-                  },
-                ])
-              }
-            } catch {}
-          }
+      } else if (!hasLocalData && typeof window !== "undefined") {
+        const cached = localStorage.getItem("healthAssessmentResult")
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached)
+            if (parsed && (parsed.overallScore !== undefined || parsed.riskResults)) {
+              setAssessments([
+                {
+                  id: parsed.id || "local-latest",
+                  overall_score: parsed.overallScore ?? 80,
+                  summary: parsed.summary,
+                  created_at: new Date().toISOString(),
+                  result_data: parsed,
+                },
+              ])
+            }
+          } catch {}
         }
       }
     } catch (error) {
-      console.error("Dashboard error:", error)
+      console.warn("Dashboard fast load:", error)
     } finally {
       setLoading(false)
     }

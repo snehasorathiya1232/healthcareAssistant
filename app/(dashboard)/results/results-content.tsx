@@ -56,22 +56,38 @@ export default function ResultsContent() {
   const [isDemoUser, setIsDemoUser] = useState(false)
 
   useEffect(() => {
-    loadResult()
+    // 1. Instant local render if available
+    let hasLocal = false
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("healthAssessmentResult")
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached)
+          if (parsed && (parsed.overallScore !== undefined || parsed.riskResults)) {
+            setResult(parsed)
+            hasLocal = true
+            setLoading(false)
+          }
+        } catch {}
+      }
+    }
+
+    loadResult(hasLocal)
   }, [])
 
-  const loadResult = async () => {
+  const loadResult = async (hasLocalData: boolean) => {
     try {
-      setLoading(true)
+      if (!hasLocalData) {
+        setLoading(true)
+      }
       setError("")
 
-      // Check logged-in user
-      const {
-        data: userData,
-        error: userError,
-      } = await supabase.auth.getUser()
+      // Fast session check
+      const { data: sessionData } = await supabase.auth.getSession()
+      let user = sessionData?.session?.user
 
-      if (userError || !userData?.user) {
-        // If not logged in, check if a demo assessment result exists in localStorage
+      if (!user) {
+        // Check local demo or guest first
         if (typeof window !== "undefined") {
           const cached = localStorage.getItem("healthAssessmentResult")
           if (cached) {
@@ -83,53 +99,42 @@ export default function ResultsContent() {
                 setLoading(false)
                 return
               }
-            } catch (err) {
-              console.error("Error parsing demo result:", err)
-            }
+            } catch {}
           }
         }
 
-        router.push("/login")
-        return
+        // Fast getUser check with timeout
+        const timeoutPromise = new Promise<{ data: any; error: any }>((resolve) =>
+          setTimeout(() => resolve({ data: { user: null }, error: new Error("Auth timeout") }), 2000)
+        )
+        const userPromise = supabase.auth.getUser()
+        const { data: userData, error: userError } = await Promise.race([userPromise, timeoutPromise])
+
+        if (userError || !userData?.user) {
+          router.push("/login")
+          return
+        }
+        user = userData.user
       }
 
       setIsDemoUser(false)
 
-      // Get assessment ID from browser URL
-      const params = new URLSearchParams(
-        window.location.search
-      )
-
+      const params = new URLSearchParams(window.location.search)
       const assessmentId = params.get("id")
 
-      // Build query
-      let query = supabase
-        .from("health_assessments")
-        .select("*")
-        .eq(
-          "user_id",
-          userData.user.id
-        )
+      let query = supabase.from("health_assessments").select("*").eq("user_id", user.id)
 
-      // Specific assessment
       if (assessmentId) {
-        query = query.eq(
-          "id",
-          assessmentId
-        )
+        query = query.eq("id", assessmentId)
       } else {
-        // Latest assessment
-        query = query
-          .order("created_at", {
-            ascending: false,
-          })
-          .limit(1)
+        query = query.order("created_at", { ascending: false }).limit(1)
       }
 
-      const {
-        data,
-        error: assessmentError,
-      } = await query.maybeSingle()
+      const dbTimeoutPromise = new Promise<{ data: any; error: any }>((resolve) =>
+        setTimeout(() => resolve({ data: null, error: new Error("DB Timeout") }), 3000)
+      )
+
+      const { data, error: assessmentError } = await Promise.race([query.maybeSingle(), dbTimeoutPromise])
 
       if (assessmentError || !data) {
         if (typeof window !== "undefined") {
